@@ -122,7 +122,7 @@ public class GameUI {
         g.setColor(new Color(255, 200, 0));
         g.fillRect(0, 18, screenWidth, 6);
 
-        // 2. SMBX Title Logo: "SUPER MARIO BROS. X"
+        // LOGO
         int logoY = 100;
 
         g.setFont(logoSuperFont);
