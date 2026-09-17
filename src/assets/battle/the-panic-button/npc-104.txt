@@ -1,0 +1,4 @@
+height=22
+gfxheight=22
+width=96
+gfxwidth=96

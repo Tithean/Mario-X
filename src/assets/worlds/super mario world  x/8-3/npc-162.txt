@@ -1,0 +1,6 @@
+noyoshi=1
+cliffturn=1
+height=132
+width=74
+gfxheight=132
+gfxwidth=74

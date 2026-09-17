@@ -1,0 +1,12 @@
+# IntelliJ IDEA
+out/
+.idea/
+*.iml
+
+bin/
+
+# VS Code
+.vscode/
+
+# Mac OS files
+.DS_Store

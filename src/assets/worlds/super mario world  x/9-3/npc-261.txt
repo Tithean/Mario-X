@@ -1,0 +1,2 @@
+cliffturn=1
+speed=2

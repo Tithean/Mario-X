@@ -1,0 +1,7 @@
+cliffturn=1
+grabtop=1
+playerblock=1
+playerblocktop=1
+speed=2
+noiceball=1
+nofireball=1

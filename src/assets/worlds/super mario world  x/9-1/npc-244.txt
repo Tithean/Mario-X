@@ -1,0 +1,4 @@
+jumphurt=1
+grabtop=0
+grabside=0
+spinjump=0

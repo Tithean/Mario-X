@@ -1,0 +1,4 @@
+cliffturn=1
+noiceball=1
+nofireball=1
+speed=2

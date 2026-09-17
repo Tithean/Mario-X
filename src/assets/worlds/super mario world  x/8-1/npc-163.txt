@@ -1,0 +1,6 @@
+noyoshi=1
+height=106
+width=72
+gfxheight=106
+gfxwidth=72
+speed=1

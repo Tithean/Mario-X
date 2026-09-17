@@ -1,0 +1,2 @@
+grabside=0
+noyoshi=1

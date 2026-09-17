@@ -1,0 +1,5 @@
+speed=1
+height=64
+width=48
+gfxheight=64
+gfxwidth=48

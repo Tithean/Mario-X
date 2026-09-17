@@ -1,0 +1,7 @@
+framespeed=1
+foreground=1
+width=48
+height=40
+gfxwidth=52
+gfxheight=66
+gfxoffsety=10

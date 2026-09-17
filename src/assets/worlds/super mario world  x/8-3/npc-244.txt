@@ -1,0 +1,11 @@
+foreground=1
+jumphurt=1
+score=9
+noyoshi=1
+nofireball=1
+noiceball=0
+speed=4
+height=48
+width=48
+gfxheight=48
+gfxwidth=48
