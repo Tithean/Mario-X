@@ -1,5 +1,6 @@
 package com.supermariox.player;
 
+import com.supermariox.audio.SoundManager;
 import com.supermariox.enermy.Entity;
 import com.supermariox.graphics.Animation;
 import com.supermariox.graphics.AssetManager;
@@ -196,12 +197,14 @@ public class Player extends Entity {
             coyoteTimer = 0;
             jumpBufferTimer = 0;
             jumpsRemaining = maxJumps - 1; // Used one jump
+            SoundManager.getInstance().playSound("player-jump");
         }
         // Execute Double Jump (in air, still has a jump left)
         else if (jumpBufferTimer > 0 && jumpsRemaining > 0 && !onGround && coyoteTimer == 0) {
             velY = JUMP_FORCE * 0.92f; // Slightly smaller double jump
             jumpBufferTimer = 0;
             jumpsRemaining--;
+            SoundManager.getInstance().playSound("player-jump");
         }
 
         // Apply Gravity
@@ -276,6 +279,7 @@ public class Player extends Entity {
 
     public void grow() {
         score += 1000;
+        SoundManager.getInstance().playSound("player-grow");
     }
 
     public void takeDamage() {
@@ -289,6 +293,8 @@ public class Player extends Entity {
         velY = -9.0f;
         velX = 0;
         lives--;
+        SoundManager.getInstance().stopMusic();
+        SoundManager.getInstance().playSound("player-died");
     }
 
     public void respawn(float spawnX, float spawnY) {
@@ -317,11 +323,15 @@ public class Player extends Entity {
         if (coins >= 100) {
             coins -= 100;
             lives++;
+            SoundManager.getInstance().playSound("1up");
         }
     }
 
     public void addScore(int amount) { score += amount; }
-    public void addLife() { lives++; }
+    public void addLife() {
+        lives++;
+        SoundManager.getInstance().playSound("1up");
+    }
     public void setScore(int score) { this.score = score; }
     public void setCoins(int coins) { this.coins = coins; }
 

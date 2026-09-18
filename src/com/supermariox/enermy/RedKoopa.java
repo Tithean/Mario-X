@@ -1,5 +1,6 @@
 package com.supermariox.enermy;
 
+import com.supermariox.audio.SoundManager;
 import com.supermariox.graphics.Animation;
 import com.supermariox.graphics.AssetManager;
 import com.supermariox.graphics.Camera;
@@ -101,6 +102,7 @@ public class RedKoopa extends Enemy {
     public void onStomped(Player player) {
         player.setVelY(-6.5f);
         player.addScore(100);
+        SoundManager.getInstance().playSound("stomped");
 
         if (!isShell) {
             isShell = true;
@@ -121,6 +123,7 @@ public class RedKoopa extends Enemy {
         isShell = true;
         movingShell = true;
         velX = fromLeft ? 8.5f : -8.5f;
+        SoundManager.getInstance().playSound("shell-hit");
     }
 
     @Override

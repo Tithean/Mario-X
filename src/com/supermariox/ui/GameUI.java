@@ -1,5 +1,6 @@
 package com.supermariox.ui;
 
+import com.supermariox.audio.SoundManager;
 import com.supermariox.game.Game;
 import com.supermariox.game.GameState;
 import com.supermariox.player.Player;
@@ -22,12 +23,18 @@ public class GameUI {
     private int characterIndex = 0; // 0: Mario, 1: Luigi, 2: Peach, 3: Toad, 4: Link
     private boolean inCharacterSelect = false;
     private boolean inOptionsMenu = false;
+    private boolean inPauseOptions = false;
 
-    private int optionsIndex = 0; // 0: Screen Resolution / Fullscreen, 1: Apply, 2: Back
+    // Options Index:
+    // 0: Master Volume, 1: Music Volume, 2: Music Track (Mute),
+    // 3: Sound FX Volume, 4: Sound Effects (Mute), 5: Screen Size,
+    // 6: Apply Screen Size, 7: Back
+    private int optionsIndex = 0;
     private int resolutionChoice = 0; // 0: 960x540 (1x), 1: 1280x720 (1.33x), 2: 1600x900 (1.66x), 3: 1920x1080 (2x), 4: Fullscreen
 
     // Overlay Menu Navigation Indices
-    private int pauseMenuIndex = 0;    // 0: CONTINUE, 1: RESTART, 2: MAIN MENU
+    // Pause menu: 0: CONTINUE, 1: AUDIO & SETTINGS, 2: RESTART, 3: MAIN MENU
+    private int pauseMenuIndex = 0;
     private int gameOverMenuIndex = 0; // 0: RETRY, 1: MAIN MENU
     private int victoryMenuIndex = 0;  // 0: NEXT LEVEL, 1: REPLAY, 2: MAIN MENU
 
@@ -81,7 +88,11 @@ public class GameUI {
             case PAUSED:
                 renderSMBXHUD(g, player, width);
                 if (state == GameState.PAUSED) {
-                    renderPauseOverlay(g, width, height);
+                    if (inPauseOptions) {
+                        renderOptionsMenu(g, width, height, true);
+                    } else {
+                        renderPauseOverlay(g, width, height);
+                    }
                 }
                 break;
             case GAME_OVER:
@@ -145,7 +156,7 @@ public class GameUI {
 
         // 3. Render Menus
         if (inOptionsMenu) {
-            renderOptionsMenu(g, screenWidth, screenHeight);
+            renderOptionsMenu(g, screenWidth, screenHeight, false);
         } else if (inCharacterSelect) {
             renderCharacterSelect(g, screenWidth, screenHeight);
         } else {
@@ -187,64 +198,192 @@ public class GameUI {
         }
     }
 
-    private void renderOptionsMenu(Graphics2D g, int screenWidth, int screenHeight) {
-        g.setFont(menuFont);
-        g.setColor(Color.YELLOW);
-        drawCenteredString(g, "--- SCREEN & OPTIONS ---", screenWidth, 290);
+    public void renderOptionsMenu(Graphics2D g, int screenWidth, int screenHeight, boolean isPauseMenu) {
+        int cardW = 780;
+        int cardH = 430;
+        int cardX = (screenWidth - cardW) / 2;
+        int cardY = (screenHeight - cardH) / 2;
 
-        int startY = 340;
-        int spacing = 38;
+        // Backdrop tint
+        g.setColor(new Color(0, 0, 0, 195));
+        g.fillRect(0, 0, screenWidth, screenHeight);
 
-        // Option 0: Screen Resolution / Fullscreen
-        String resLabel = "< Size: " + resolutionNames[resolutionChoice] + " >";
-        int y0 = startY;
+        // Card body
+        g.setColor(new Color(15, 18, 30, 245));
+        g.fillRoundRect(cardX, cardY, cardW, cardH, 20, 20);
+
+        // Golden borders
+        g.setColor(new Color(255, 215, 0));
+        g.drawRoundRect(cardX, cardY, cardW, cardH, 20, 20);
+        g.drawRoundRect(cardX + 1, cardY + 1, cardW - 2, cardH - 2, 18, 18);
+        g.setColor(new Color(255, 215, 0, 80));
+        g.drawRoundRect(cardX + 4, cardY + 4, cardW - 8, cardH - 8, 14, 14);
+
+        // Header Title
+        String title = isPauseMenu ? "AUDIO & SETTINGS (PAUSED)" : "AUDIO & SCREEN SETTINGS";
+        g.setFont(new Font("Arial Black", Font.BOLD, 22));
         g.setColor(Color.BLACK);
-        drawCenteredString(g, resLabel, screenWidth + 3, y0 + 3);
-        if (optionsIndex == 0) {
-            g.setColor(Color.CYAN);
-            drawCenteredString(g, resLabel, screenWidth, y0);
-            FontMetrics fm = g.getFontMetrics(menuFont);
-            int textW = fm.stringWidth(resLabel);
-            g.setColor(Color.YELLOW);
-            g.drawString("▶", (screenWidth - textW) / 2 - 28, y0);
-        } else {
-            g.setColor(Color.WHITE);
-            drawCenteredString(g, resLabel, screenWidth, y0);
+        drawCenteredString(g, title, screenWidth + 2, cardY + 36);
+        g.setColor(new Color(255, 215, 0));
+        drawCenteredString(g, title, screenWidth, cardY + 34);
+
+        // Header Divider Line
+        g.setColor(new Color(255, 215, 0, 160));
+        g.drawLine(cardX + 40, cardY + 48, cardX + cardW - 40, cardY + 48);
+
+        SoundManager sm = SoundManager.getInstance();
+        int startY = cardY + 80;
+        int spacing = 36;
+        int labelRightX = cardX + 340;
+        int controlLeftX = cardX + 365;
+
+        g.setFont(new Font("Monospaced", Font.BOLD, 18));
+
+        for (int i = 0; i < 8; i++) {
+            int y = startY + (i * spacing);
+            boolean selected = (i == optionsIndex);
+
+            if (selected) {
+                g.setColor(new Color(255, 215, 0, 35));
+                g.fillRoundRect(cardX + 25, y - 21, cardW - 50, 28, 10, 10);
+                g.setColor(new Color(255, 215, 0, 90));
+                g.drawRoundRect(cardX + 25, y - 21, cardW - 50, 28, 10, 10);
+
+                g.setColor(new Color(255, 50, 50));
+                g.drawString("▶", cardX + 35, y);
+            }
+
+            Color labelColor = selected ? Color.YELLOW : Color.WHITE;
+
+            switch (i) {
+                case 0: // Master Volume
+                    drawOptionLabel(g, "Master Volume", labelRightX, y, labelColor);
+                    drawSliderControl(g, controlLeftX, y, sm.getMasterVolume(), sm.isSoundEnabled() || sm.isMusicEnabled(), new Color(255, 180, 0), selected);
+                    break;
+                case 1: // Music Volume (BGM)
+                    drawOptionLabel(g, "Music Volume (BGM)", labelRightX, y, labelColor);
+                    drawSliderControl(g, controlLeftX, y, sm.getMusicVolume(), sm.isMusicEnabled(), new Color(0, 210, 255), selected);
+                    break;
+                case 2: // Music Track Mute
+                    drawOptionLabel(g, "Music Track", labelRightX, y, labelColor);
+                    drawToggleControl(g, controlLeftX, y, sm.isMusicEnabled(), selected);
+                    break;
+                case 3: // Gameplay Sound (SFX)
+                    drawOptionLabel(g, "Gameplay Sound (SFX)", labelRightX, y, labelColor);
+                    drawSliderControl(g, controlLeftX, y, sm.getSoundVolume(), sm.isSoundEnabled(), new Color(80, 240, 80), selected);
+                    break;
+                case 4: // Sound Effects Mute
+                    drawOptionLabel(g, "Sound Effects", labelRightX, y, labelColor);
+                    drawToggleControl(g, controlLeftX, y, sm.isSoundEnabled(), selected);
+                    break;
+                case 5: // Screen Resolution
+                    drawOptionLabel(g, "Screen Size", labelRightX, y, labelColor);
+                    drawResolutionControl(g, controlLeftX, y, resolutionNames[resolutionChoice], selected);
+                    break;
+                case 6: // Apply Screen Size Button
+                    drawCenteredButton(g, "APPLY SCREEN RESOLUTION", screenWidth, y, selected ? new Color(100, 255, 100) : Color.LIGHT_GRAY, selected);
+                    break;
+                case 7: // Back Button
+                    String backText = isPauseMenu ? "RETURN TO PAUSE MENU" : "RETURN TO MAIN MENU";
+                    drawCenteredButton(g, backText, screenWidth, y, selected ? Color.YELLOW : Color.WHITE, selected);
+                    break;
+            }
         }
 
-        // Option 1: Apply Resolution
-        String applyLabel = "APPLY SELECTED SCREEN SIZE";
-        int y1 = startY + spacing;
+        // Footer Navigation Hint
+        g.setFont(new Font("Arial", Font.BOLD, 13));
+        g.setColor(new Color(190, 190, 210));
+        drawCenteredString(g, "[↑/↓] Navigate   •   [←/→] Adjust Volume   •   [ENTER] Select / Toggle   •   [ESC] Back", screenWidth, cardY + cardH - 16);
+    }
+
+    private void drawOptionLabel(Graphics2D g, String label, int rightX, int y, Color color) {
+        FontMetrics fm = g.getFontMetrics();
+        int x = rightX - fm.stringWidth(label);
         g.setColor(Color.BLACK);
-        drawCenteredString(g, applyLabel, screenWidth + 3, y1 + 3);
-        if (optionsIndex == 1) {
-            g.setColor(new Color(100, 255, 100));
-            drawCenteredString(g, applyLabel, screenWidth, y1);
-            FontMetrics fm = g.getFontMetrics(menuFont);
-            int textW = fm.stringWidth(applyLabel);
-            g.setColor(Color.YELLOW);
-            g.drawString("▶", (screenWidth - textW) / 2 - 28, y1);
-        } else {
-            g.setColor(Color.LIGHT_GRAY);
-            drawCenteredString(g, applyLabel, screenWidth, y1);
+        g.drawString(label, x + 2, y + 2);
+        g.setColor(color);
+        g.drawString(label, x, y);
+    }
+
+    private void drawSliderControl(Graphics2D g, int x, int y, float volume, boolean enabled, Color barColor, boolean selected) {
+        g.setColor(selected ? Color.YELLOW : Color.GRAY);
+        g.drawString("<", x, y);
+
+        int barX = x + 18;
+        int barY = y - 14;
+        int segW = 13;
+        int segH = 14;
+        int gap = 2;
+        int totalSegments = 10;
+        int filledSegments = Math.round(volume * totalSegments);
+
+        for (int s = 0; s < totalSegments; s++) {
+            int sx = barX + (s * (segW + gap));
+            if (s < filledSegments && enabled) {
+                g.setColor(barColor);
+                g.fillRect(sx, barY, segW, segH);
+            } else {
+                g.setColor(new Color(40, 45, 60));
+                g.fillRect(sx, barY, segW, segH);
+            }
+            g.setColor(new Color(70, 75, 90));
+            g.drawRect(sx, barY, segW, segH);
         }
 
-        // Option 2: Back
-        String backLabel = "BACK TO MAIN MENU";
-        int y2 = startY + (spacing * 2);
+        int rightArrowX = barX + (totalSegments * (segW + gap)) + 6;
+        g.setColor(selected ? Color.YELLOW : Color.GRAY);
+        g.drawString(">", rightArrowX, y);
+
+        int textX = rightArrowX + 18;
+        int percent = Math.round(volume * 100);
+        String pctStr = enabled ? String.format("%3d%%", percent) : "MUTED";
+        Color pctColor = enabled ? (selected ? Color.WHITE : Color.LIGHT_GRAY) : new Color(255, 100, 100);
         g.setColor(Color.BLACK);
-        drawCenteredString(g, backLabel, screenWidth + 3, y2 + 3);
-        if (optionsIndex == 2) {
-            g.setColor(Color.YELLOW);
-            drawCenteredString(g, backLabel, screenWidth, y2);
-            FontMetrics fm = g.getFontMetrics(menuFont);
-            int textW = fm.stringWidth(backLabel);
-            g.setColor(Color.YELLOW);
-            g.drawString("▶", (screenWidth - textW) / 2 - 28, y2);
-        } else {
-            g.setColor(Color.WHITE);
-            drawCenteredString(g, backLabel, screenWidth, y2);
-        }
+        g.drawString(pctStr, textX + 1, y + 1);
+        g.setColor(pctColor);
+        g.drawString(pctStr, textX, y);
+    }
+
+    private void drawToggleControl(Graphics2D g, int x, int y, boolean enabled, boolean selected) {
+        g.setColor(selected ? Color.YELLOW : Color.GRAY);
+        g.drawString("<", x, y);
+
+        String status = enabled ? "ENABLED" : "MUTED";
+        Color statusColor = enabled ? new Color(100, 255, 100) : new Color(255, 100, 100);
+
+        int textX = x + 25;
+        g.setColor(Color.BLACK);
+        g.drawString(status, textX + 1, y + 1);
+        g.setColor(statusColor);
+        g.drawString(status, textX, y);
+
+        g.setColor(selected ? Color.YELLOW : Color.GRAY);
+        g.drawString(">", x + 150, y);
+    }
+
+    private void drawResolutionControl(Graphics2D g, int x, int y, String resName, boolean selected) {
+        g.setColor(selected ? Color.YELLOW : Color.GRAY);
+        g.drawString("<", x, y);
+
+        int textX = x + 16;
+        g.setColor(Color.BLACK);
+        g.drawString(resName, textX + 1, y + 1);
+        g.setColor(selected ? Color.CYAN : Color.LIGHT_GRAY);
+        g.drawString(resName, textX, y);
+
+        FontMetrics fm = g.getFontMetrics();
+        int rw = fm.stringWidth(resName);
+        g.setColor(selected ? Color.YELLOW : Color.GRAY);
+        g.drawString(">", textX + rw + 8, y);
+    }
+
+    private void drawCenteredButton(Graphics2D g, String text, int screenWidth, int y, Color color, boolean selected) {
+        FontMetrics fm = g.getFontMetrics();
+        int tx = (screenWidth - fm.stringWidth(text)) / 2;
+        g.setColor(Color.BLACK);
+        g.drawString(text, tx + 2, y + 2);
+        g.setColor(color);
+        g.drawString(text, tx, y);
     }
 
     private void renderCharacterSelect(Graphics2D g, int screenWidth, int screenHeight) {
@@ -348,17 +487,18 @@ public class GameUI {
 
         g.setFont(logoSuperFont);
         g.setColor(Color.YELLOW);
-        drawCenteredString(g, "PAUSED", screenWidth, screenHeight / 2 - 70);
+        drawCenteredString(g, "PAUSED", screenWidth, screenHeight / 2 - 80);
 
         String[] pauseOptions = {
                 "CONTINUE",
+                "AUDIO & SETTINGS",
                 "RESTART",
                 "MAIN MENU"
         };
 
         g.setFont(menuFont);
-        int startY = screenHeight / 2;
-        int spacing = 44;
+        int startY = screenHeight / 2 - 15;
+        int spacing = 42;
 
         for (int i = 0; i < pauseOptions.length; i++) {
             int y = startY + (i * spacing);
@@ -473,7 +613,7 @@ public class GameUI {
 
     public void navigateMenuUp() {
         if (inOptionsMenu) {
-            optionsIndex = (optionsIndex - 1 + 3) % 3;
+            navigateOptionsUp();
         } else if (inCharacterSelect) {
             characterIndex = (characterIndex - 1 + 5) % 5;
         } else {
@@ -483,7 +623,7 @@ public class GameUI {
 
     public void navigateMenuDown() {
         if (inOptionsMenu) {
-            optionsIndex = (optionsIndex + 1) % 3;
+            navigateOptionsDown();
         } else if (inCharacterSelect) {
             characterIndex = (characterIndex + 1) % 5;
         } else {
@@ -491,12 +631,20 @@ public class GameUI {
         }
     }
 
+    public void navigateOptionsUp() {
+        optionsIndex = (optionsIndex - 1 + 8) % 8;
+    }
+
+    public void navigateOptionsDown() {
+        optionsIndex = (optionsIndex + 1) % 8;
+    }
+
     public void navigatePauseUp() {
-        pauseMenuIndex = (pauseMenuIndex - 1 + 3) % 3;
+        pauseMenuIndex = (pauseMenuIndex - 1 + 4) % 4;
     }
 
     public void navigatePauseDown() {
-        pauseMenuIndex = (pauseMenuIndex + 1) % 3;
+        pauseMenuIndex = (pauseMenuIndex + 1) % 4;
     }
 
     public void navigateGameOverUp() {
@@ -516,14 +664,60 @@ public class GameUI {
     }
 
     public void navigateOptionsLeft() {
-        if (inOptionsMenu && optionsIndex == 0) {
-            resolutionChoice = (resolutionChoice - 1 + resolutionNames.length) % resolutionNames.length;
+        SoundManager sm = SoundManager.getInstance();
+        switch (optionsIndex) {
+            case 0: // Master Volume
+                sm.adjustMasterVolume(-0.10f);
+                sm.playSound("coin");
+                break;
+            case 1: // Music Volume (BGM)
+                sm.adjustMusicVolume(-0.10f);
+                break;
+            case 2: // Music Track Mute
+                sm.setMusicEnabled(!sm.isMusicEnabled());
+                sm.playSound("level-select");
+                break;
+            case 3: // Gameplay Sound (SFX)
+                sm.adjustSoundVolume(-0.10f);
+                sm.playSound("coin");
+                break;
+            case 4: // Sound Effects Mute
+                sm.setSoundEnabled(!sm.isSoundEnabled());
+                sm.playSound("level-select");
+                break;
+            case 5: // Screen Size Choice
+                resolutionChoice = (resolutionChoice - 1 + resolutionNames.length) % resolutionNames.length;
+                sm.playSound("level-select");
+                break;
         }
     }
 
     public void navigateOptionsRight() {
-        if (inOptionsMenu && optionsIndex == 0) {
-            resolutionChoice = (resolutionChoice + 1) % resolutionNames.length;
+        SoundManager sm = SoundManager.getInstance();
+        switch (optionsIndex) {
+            case 0: // Master Volume
+                sm.adjustMasterVolume(0.10f);
+                sm.playSound("coin");
+                break;
+            case 1: // Music Volume (BGM)
+                sm.adjustMusicVolume(0.10f);
+                break;
+            case 2: // Music Track Mute
+                sm.setMusicEnabled(!sm.isMusicEnabled());
+                sm.playSound("level-select");
+                break;
+            case 3: // Gameplay Sound (SFX)
+                sm.adjustSoundVolume(0.10f);
+                sm.playSound("coin");
+                break;
+            case 4: // Sound Effects Mute
+                sm.setSoundEnabled(!sm.isSoundEnabled());
+                sm.playSound("level-select");
+                break;
+            case 5: // Screen Size Choice
+                resolutionChoice = (resolutionChoice + 1) % resolutionNames.length;
+                sm.playSound("level-select");
+                break;
         }
     }
 
@@ -565,7 +759,10 @@ public class GameUI {
     public void setInCharacterSelect(boolean inCharacterSelect) { this.inCharacterSelect = inCharacterSelect; }
     public boolean isInOptionsMenu() { return inOptionsMenu; }
     public void setInOptionsMenu(boolean inOptionsMenu) { this.inOptionsMenu = inOptionsMenu; }
+    public boolean isInPauseOptions() { return inPauseOptions; }
+    public void setInPauseOptions(boolean inPauseOptions) { this.inPauseOptions = inPauseOptions; }
     public int getOptionsIndex() { return optionsIndex; }
+    public void setOptionsIndex(int optionsIndex) { this.optionsIndex = optionsIndex; }
     public int getResolutionChoice() { return resolutionChoice; }
 
     public int getPauseMenuIndex() { return pauseMenuIndex; }

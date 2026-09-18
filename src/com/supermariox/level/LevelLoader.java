@@ -29,6 +29,7 @@ public class LevelLoader {
         int tileSize = 32;
 
         Level level = new Level("1-1", levelWidth, levelHeight);
+        level.setMusicTrack("smb-overworld.mp3");
         AssetManager am = AssetManager.getInstance();
 
         BufferedImage groundImg = am.getImage("tile/tile-1.gif");
@@ -108,6 +109,7 @@ public class LevelLoader {
         int tileSize = 32;
 
         Level level = new Level("1-2", levelWidth, levelHeight);
+        level.setMusicTrack("smb-underground.mp3");
         level.loadBackground("background2/background2-2.gif"); // Underground Cave
 
         AssetManager am = AssetManager.getInstance();
@@ -173,6 +175,7 @@ public class LevelLoader {
         int tileSize = 32;
 
         Level level = new Level("1-3", levelWidth, levelHeight);
+        level.setMusicTrack("smb3-sky.mp3");
         level.loadBackground("background2/background2-4.gif"); // Athletic Sky
 
         AssetManager am = AssetManager.getInstance();

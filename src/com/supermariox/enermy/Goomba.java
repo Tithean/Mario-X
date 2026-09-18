@@ -1,5 +1,6 @@
 package com.supermariox.enermy;
 
+import com.supermariox.audio.SoundManager;
 import com.supermariox.graphics.Animation;
 import com.supermariox.graphics.AssetManager;
 import com.supermariox.graphics.Camera;
@@ -92,6 +93,7 @@ public class Goomba extends Enemy {
         y += 16;
         player.addScore(100);
         player.setVelY(-6.5f); // Player bounces up
+        SoundManager.getInstance().playSound("stomped");
     }
 
     @Override

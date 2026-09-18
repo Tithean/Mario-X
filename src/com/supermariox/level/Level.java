@@ -156,4 +156,6 @@ public class Level {
     public List<Block> getBlocks() { return blocks; }
     public List<Enemy> getEnemies() { return enemies; }
     public List<Item> getItems() { return items; }
+    public String getMusicTrack() { return musicTrack; }
+    public void setMusicTrack(String musicTrack) { this.musicTrack = musicTrack; }
 }

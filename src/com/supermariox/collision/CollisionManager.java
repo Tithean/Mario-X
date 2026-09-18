@@ -1,5 +1,6 @@
 package com.supermariox.collision;
 
+import com.supermariox.audio.SoundManager;
 import com.supermariox.enermy.Enemy;
 import com.supermariox.enermy.Goomba;
 import com.supermariox.enermy.KoopaTroopa;
@@ -138,12 +139,19 @@ public class CollisionManager {
                 if (player.getVelY() < 0 && playerTop <= blockBottom && playerTop >= blockTop - 12) {
                     player.setY(blockBottom);
                     player.setVelY(0);
+                    Block.BlockType prevType = block.getType();
                     boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SMALL);
 
-                    if (!destroyed) {
-                        if (block.getType() == Block.BlockType.USED) {
-                            level.addItem(new Item(block.getX(), block.getY(), Item.ItemType.MUSHROOM));
-                        }
+                    if (destroyed) {
+                        SoundManager.getInstance().playSound("block-smash");
+                    } else if (prevType == Block.BlockType.QUESTION_COIN) {
+                        player.addCoins(1);
+                        SoundManager.getInstance().playSound("coin");
+                    } else if (prevType == Block.BlockType.QUESTION_MUSHROOM) {
+                        level.addItem(new Item(block.getX(), block.getY(), Item.ItemType.MUSHROOM));
+                        SoundManager.getInstance().playSound("mushroom");
+                    } else {
+                        SoundManager.getInstance().playSound("block-hit");
                     }
                 }
                 // Landing on top of block
@@ -199,12 +207,14 @@ public class CollisionManager {
                         KoopaTroopa koopa = (KoopaTroopa) enemy;
                         if (koopa.isShell() && !koopa.isMovingShell()) {
                             koopa.kick(player.getX() < koopa.getX());
+                            SoundManager.getInstance().playSound("shell-hit");
                             continue;
                         }
                     } else if (enemy instanceof RedKoopa) {
                         RedKoopa koopa = (RedKoopa) enemy;
                         if (koopa.isShell() && !koopa.isMovingShell()) {
                             koopa.kick(player.getX() < koopa.getX());
+                            SoundManager.getInstance().playSound("shell-hit");
                             continue;
                         }
                     }
@@ -329,6 +339,7 @@ public class CollisionManager {
                     Enemy other = enemies.get(j);
                     if (other.isActive() && enemy.getBounds().intersects(other.getBounds())) {
                         other.onHitByShell();
+                        SoundManager.getInstance().playSound("shell-hit");
                     }
                 }
             }
@@ -372,9 +383,13 @@ public class CollisionManager {
 
     private static void checkPlayerGoal(Player player, Level level) {
         if (player.getBounds().intersects(level.getGoalBounds())) {
-            player.setCurrentState(PlayerState.VICTORY);
-            player.setVelX(0);
-            player.setVelY(0);
+            if (player.getCurrentState() != PlayerState.VICTORY) {
+                player.setCurrentState(PlayerState.VICTORY);
+                player.setVelX(0);
+                player.setVelY(0);
+                SoundManager.getInstance().stopMusic();
+                SoundManager.getInstance().playSound("level-win");
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.supermariox.game;
 
+import com.supermariox.audio.SoundManager;
 import com.supermariox.collision.CollisionManager;
 import com.supermariox.player.Player;
 import com.supermariox.player.PlayerState;
@@ -66,6 +67,7 @@ public class GamePanel extends JPanel {
         gameUI = new GameUI();
 
         startNewGame();
+        SoundManager.getInstance().playMusic("smb3-overworld.mp3");
     }
 
     @Override
@@ -89,6 +91,10 @@ public class GamePanel extends JPanel {
         camera.setBounds(0, 0, currentLevel.getWidth(), currentLevel.getHeight());
         gameUI.resetTime();
         gameUI.setLevelName(currentLevel.getName());
+
+        if (gameState == GameState.PLAYING) {
+            SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
+        }
     }
 
     public void initGame(int levelIndex) {
@@ -108,18 +114,24 @@ public class GamePanel extends JPanel {
         camera.setBounds(0, 0, currentLevel.getWidth(), currentLevel.getHeight());
         gameUI.resetTime();
         gameUI.setLevelName(currentLevel.getName());
+
+        if (gameState == GameState.PLAYING) {
+            SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
+        }
     }
 
     public void nextLevel() {
         int nextIdx = (currentLevelIndex % 3) + 1;
-        initGame(nextIdx);
         gameState = GameState.PLAYING;
+        initGame(nextIdx);
     }
 
     public void returnToHomeScreen() {
         gameState = GameState.MENU;
         gameUI.setInCharacterSelect(false);
         gameUI.setInOptionsMenu(false);
+        gameUI.setInPauseOptions(false);
+        SoundManager.getInstance().playMusic("smb3-overworld.mp3");
     }
 
     public void update() {
@@ -137,21 +149,54 @@ public class GamePanel extends JPanel {
             if (game != null) game.setScreenResolution(1920, 1080);
         }
 
+        // Global Audio Hotkeys: M to Toggle Music, - / [ for Volume Down, + / ] for Volume Up
+        if (inputHandler.isKeyJustPressed(KeyEvent.VK_M)) {
+            SoundManager sm = SoundManager.getInstance();
+            sm.setMusicEnabled(!sm.isMusicEnabled());
+            String status = sm.isMusicEnabled() ? "Music: " + Math.round(sm.getMusicVolume() * 100) + "%" : "Music: MUTED";
+            showToastNotification(status);
+            sm.playSound("level-select");
+        } else if (inputHandler.isKeyJustPressed(KeyEvent.VK_MINUS) || inputHandler.isKeyJustPressed(KeyEvent.VK_OPEN_BRACKET)) {
+            SoundManager sm = SoundManager.getInstance();
+            sm.adjustMasterVolume(-0.10f);
+            showToastNotification(String.format("Master Volume: %d%%", Math.round(sm.getMasterVolume() * 100)));
+            sm.playSound("coin");
+        } else if (inputHandler.isKeyJustPressed(KeyEvent.VK_EQUALS) || inputHandler.isKeyJustPressed(KeyEvent.VK_CLOSE_BRACKET) || inputHandler.isKeyJustPressed(KeyEvent.VK_ADD)) {
+            SoundManager sm = SoundManager.getInstance();
+            sm.adjustMasterVolume(0.10f);
+            showToastNotification(String.format("Master Volume: %d%%", Math.round(sm.getMasterVolume() * 100)));
+            sm.playSound("coin");
+        }
+
         // Handle Global ESC / Home Screen Return
         if (inputHandler.isKeyJustPressed(KeyEvent.VK_ESCAPE)) {
             if (gameState == GameState.MENU) {
                 if (gameUI.isInOptionsMenu()) {
                     gameUI.setInOptionsMenu(false);
+                    SoundManager.getInstance().playSound("level-select");
                     return;
                 } else if (gameUI.isInCharacterSelect()) {
                     gameUI.setInCharacterSelect(false);
+                    SoundManager.getInstance().playSound("level-select");
                     return;
                 }
-            } else if (gameState == GameState.PAUSED || gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
+            } else if (gameState == GameState.PAUSED) {
+                if (gameUI.isInPauseOptions()) {
+                    gameUI.setInPauseOptions(false);
+                    SoundManager.getInstance().playSound("level-select");
+                    return;
+                }
+                gameState = GameState.PLAYING;
+                SoundManager.getInstance().resumeMusic();
+                SoundManager.getInstance().playSound("pause");
+                return;
+            } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
                 returnToHomeScreen();
                 return;
             } else if (gameState == GameState.PLAYING) {
                 gameState = GameState.PAUSED;
+                SoundManager.getInstance().pauseMusic();
+                SoundManager.getInstance().playSound("pause");
                 return;
             }
         }
@@ -160,13 +205,21 @@ public class GamePanel extends JPanel {
         if (inputHandler.isKeyJustPressed(KeyEvent.VK_P)) {
             if (gameState == GameState.PLAYING) {
                 gameState = GameState.PAUSED;
+                SoundManager.getInstance().pauseMusic();
+                SoundManager.getInstance().playSound("pause");
             } else if (gameState == GameState.PAUSED) {
+                if (gameUI.isInPauseOptions()) {
+                    gameUI.setInPauseOptions(false);
+                }
                 gameState = GameState.PLAYING;
+                SoundManager.getInstance().resumeMusic();
+                SoundManager.getInstance().playSound("pause");
             }
         }
 
         // Handle Restart (R key)
         if (inputHandler.isRestartJustPressed()) {
+            SoundManager.getInstance().playSound("coin");
             initGame(currentLevelIndex);
             gameState = GameState.PLAYING;
             return;
@@ -176,15 +229,19 @@ public class GamePanel extends JPanel {
             case MENU:
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_UP) || inputHandler.isKeyJustPressed(KeyEvent.VK_W)) {
                     gameUI.navigateMenuUp();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
                     gameUI.navigateMenuDown();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_LEFT) || inputHandler.isKeyJustPressed(KeyEvent.VK_A)) {
                     gameUI.navigateOptionsLeft();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_RIGHT) || inputHandler.isKeyJustPressed(KeyEvent.VK_D)) {
                     gameUI.navigateOptionsRight();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
                     handleMenuSelect();
@@ -218,8 +275,11 @@ public class GamePanel extends JPanel {
                         deathDelayTimer = 0;
                         if (player.getLives() > 0) {
                             player.respawn(currentLevel.getSpawnX(), currentLevel.getSpawnY());
+                            SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
                         } else {
                             gameState = GameState.GAME_OVER;
+                            SoundManager.getInstance().stopMusic();
+                            SoundManager.getInstance().playSound("player-died2");
                         }
                     }
                 } else {
@@ -229,20 +289,47 @@ public class GamePanel extends JPanel {
 
             case PAUSED:
                 gameUI.update(gameState, player);
+                if (gameUI.isInPauseOptions()) {
+                    if (inputHandler.isKeyJustPressed(KeyEvent.VK_UP) || inputHandler.isKeyJustPressed(KeyEvent.VK_W)) {
+                        gameUI.navigateOptionsUp();
+                        SoundManager.getInstance().playSound("level-select");
+                    }
+                    if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
+                        gameUI.navigateOptionsDown();
+                        SoundManager.getInstance().playSound("level-select");
+                    }
+                    if (inputHandler.isKeyJustPressed(KeyEvent.VK_LEFT) || inputHandler.isKeyJustPressed(KeyEvent.VK_A)) {
+                        gameUI.navigateOptionsLeft();
+                    }
+                    if (inputHandler.isKeyJustPressed(KeyEvent.VK_RIGHT) || inputHandler.isKeyJustPressed(KeyEvent.VK_D)) {
+                        gameUI.navigateOptionsRight();
+                    }
+                    if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
+                        handlePauseOptionsSelect();
+                    }
+                    break;
+                }
+
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_UP) || inputHandler.isKeyJustPressed(KeyEvent.VK_W)) {
                     gameUI.navigatePauseUp();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
                     gameUI.navigatePauseDown();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
+                    SoundManager.getInstance().playSound("coin");
                     int pSel = gameUI.getPauseMenuIndex();
                     if (pSel == 0) { // CONTINUE
                         gameState = GameState.PLAYING;
-                    } else if (pSel == 1) { // RESTART
+                        SoundManager.getInstance().resumeMusic();
+                    } else if (pSel == 1) { // AUDIO & SETTINGS
+                        gameUI.setInPauseOptions(true);
+                    } else if (pSel == 2) { // RESTART
                         initGame(currentLevelIndex);
                         gameState = GameState.PLAYING;
-                    } else if (pSel == 2) { // MAIN MENU
+                    } else if (pSel == 3) { // MAIN MENU
                         returnToHomeScreen();
                     }
                 }
@@ -252,11 +339,14 @@ public class GamePanel extends JPanel {
                 gameUI.update(gameState, player);
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_UP) || inputHandler.isKeyJustPressed(KeyEvent.VK_W)) {
                     gameUI.navigateGameOverUp();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
                     gameUI.navigateGameOverDown();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
+                    SoundManager.getInstance().playSound("coin");
                     int goSel = gameUI.getGameOverMenuIndex();
                     if (goSel == 0) { // RETRY
                         startNewGame();
@@ -271,11 +361,14 @@ public class GamePanel extends JPanel {
                 gameUI.update(gameState, player);
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_UP) || inputHandler.isKeyJustPressed(KeyEvent.VK_W)) {
                     gameUI.navigateVictoryUp();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
                     gameUI.navigateVictoryDown();
+                    SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
+                    SoundManager.getInstance().playSound("coin");
                     int vicSel = gameUI.getVictoryMenuIndex();
                     if (vicSel == 0) { // NEXT LEVEL
                         nextLevel();
@@ -291,20 +384,37 @@ public class GamePanel extends JPanel {
     }
 
     private void handleMenuSelect() {
+        SoundManager sm = SoundManager.getInstance();
+
         if (gameUI.isInOptionsMenu()) {
             int opt = gameUI.getOptionsIndex();
-            if (opt == 0 || opt == 1) {
+            if (opt == 0) {
+                sm.playSound("coin");
+            } else if (opt == 1 || opt == 2) {
+                sm.setMusicEnabled(!sm.isMusicEnabled());
+                sm.playSound("level-select");
+            } else if (opt == 3) {
+                sm.playSound("coin");
+            } else if (opt == 4) {
+                sm.setSoundEnabled(!sm.isSoundEnabled());
+                sm.playSound("level-select");
+            } else if (opt == 5 || opt == 6) {
                 gameUI.applySelectedResolution();
-            } else if (opt == 2) {
+                sm.playSound("coin");
+            } else if (opt == 7) {
                 gameUI.setInOptionsMenu(false);
+                sm.playSound("coin");
             }
             return;
         }
+
+        sm.playSound("coin");
 
         if (gameUI.isInCharacterSelect()) {
             startNewGame();
             gameState = GameState.PLAYING;
             gameUI.setInCharacterSelect(false);
+            SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
             return;
         }
 
@@ -316,6 +426,29 @@ public class GamePanel extends JPanel {
         } else {
             startNewGame();
             gameState = GameState.PLAYING;
+            SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
+        }
+    }
+
+    private void handlePauseOptionsSelect() {
+        SoundManager sm = SoundManager.getInstance();
+        int opt = gameUI.getOptionsIndex();
+        if (opt == 0) {
+            sm.playSound("coin");
+        } else if (opt == 1 || opt == 2) {
+            sm.setMusicEnabled(!sm.isMusicEnabled());
+            sm.playSound("level-select");
+        } else if (opt == 3) {
+            sm.playSound("coin");
+        } else if (opt == 4) {
+            sm.setSoundEnabled(!sm.isSoundEnabled());
+            sm.playSound("level-select");
+        } else if (opt == 5 || opt == 6) {
+            gameUI.applySelectedResolution();
+            sm.playSound("coin");
+        } else if (opt == 7) {
+            gameUI.setInPauseOptions(false);
+            sm.playSound("coin");
         }
     }
 
