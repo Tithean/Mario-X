@@ -1,5 +1,6 @@
 package com.supermariox.audio;
 
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -33,19 +34,44 @@ public final class AudioPlayer {
     }
 
     private static Playback playWithJavaSound(File file, boolean loop, float volume) throws Exception {
+        // Step 1: open the raw (possibly compressed MP3) stream
+        AudioInputStream rawStream = AudioSystem.getAudioInputStream(file);
+        AudioFormat rawFormat = rawStream.getFormat();
+
+        // Step 2: if not already PCM, transcode to PCM_SIGNED so Clip can handle it
+        // (mp3spi returns MPEG1L3 with NOT_SPECIFIED frame size — Clip can't use that directly)
+        AudioInputStream pcmStream;
+        if (rawFormat.getEncoding() != AudioFormat.Encoding.PCM_SIGNED
+                && rawFormat.getEncoding() != AudioFormat.Encoding.PCM_UNSIGNED) {
+            AudioFormat pcmFormat = new AudioFormat(
+                    AudioFormat.Encoding.PCM_SIGNED,
+                    rawFormat.getSampleRate(),
+                    16,
+                    rawFormat.getChannels(),
+                    rawFormat.getChannels() * 2,
+                    rawFormat.getSampleRate(),
+                    false);
+            pcmStream = AudioSystem.getAudioInputStream(pcmFormat, rawStream);
+        } else {
+            pcmStream = rawStream;
+        }
+
+        // Step 3: load fully into a Clip
         Clip clip = AudioSystem.getClip();
-        try (AudioInputStream stream = AudioSystem.getAudioInputStream(file)) {
-            clip.open(stream);
-            setClipVolume(clip, volume);
-            if (loop) {
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
-            }
-            clip.start();
-            return new Playback(clip, null);
+        try {
+            clip.open(pcmStream);
         } catch (Exception exception) {
             clip.close();
+            pcmStream.close();
             throw exception;
         }
+
+        setClipVolume(clip, volume);
+        if (loop) {
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+        clip.start();
+        return new Playback(clip, null);
     }
 
     private static Playback playWithFfplay(File file, boolean loop, float volume) throws IOException {
