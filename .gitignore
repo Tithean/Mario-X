@@ -5,6 +5,10 @@ out/
 
 bin/
 
+# Compiled Java class files and build artifacts
+*.class
+sources.txt
+
 # VS Code
 .vscode/
 

@@ -1,5 +1,7 @@
 package com.supermariox.player;
 
+import com.supermariox.audio.PlayerSoundEffects;
+import com.supermariox.audio.SoundManager;
 import com.supermariox.enermy.Entity;
 import com.supermariox.graphics.Animation;
 import com.supermariox.graphics.AssetManager;
@@ -192,6 +194,7 @@ public class Player extends Entity {
         // Execute First Jump (Ground / Coyote)
         if (jumpBufferTimer > 0 && coyoteTimer > 0) {
             velY = JUMP_FORCE;
+            SoundManager.getInstance().playSound(PlayerSoundEffects.JUMP);
             onGround = false;
             coyoteTimer = 0;
             jumpBufferTimer = 0;
@@ -200,6 +203,7 @@ public class Player extends Entity {
         // Execute Double Jump (in air, still has a jump left)
         else if (jumpBufferTimer > 0 && jumpsRemaining > 0 && !onGround && coyoteTimer == 0) {
             velY = JUMP_FORCE * 0.92f; // Slightly smaller double jump
+            SoundManager.getInstance().playSound(PlayerSoundEffects.JUMP);
             jumpBufferTimer = 0;
             jumpsRemaining--;
         }
@@ -276,6 +280,7 @@ public class Player extends Entity {
 
     public void grow() {
         score += 1000;
+        SoundManager.getInstance().playSound(PlayerSoundEffects.GROW);
     }
 
     public void takeDamage() {
@@ -285,6 +290,7 @@ public class Player extends Entity {
 
     public void die() {
         if (currentState == PlayerState.DEAD) return;
+        SoundManager.getInstance().playSound(PlayerSoundEffects.DIED);
         currentState = PlayerState.DEAD;
         velY = -9.0f;
         velX = 0;

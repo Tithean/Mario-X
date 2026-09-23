@@ -1,5 +1,6 @@
 package com.supermariox.level;
 
+import com.supermariox.audio.BackgroundMusic;
 import com.supermariox.enermy.Goomba;
 import com.supermariox.items.Item;
 import com.supermariox.enermy.KoopaTroopa;
@@ -29,6 +30,7 @@ public class LevelLoader {
         int tileSize = 32;
 
         Level level = new Level("1-1", levelWidth, levelHeight);
+        level.setMusicTrack(BackgroundMusic.SMB_OVERWORLD);
         AssetManager am = AssetManager.getInstance();
 
         BufferedImage groundImg = am.getImage("tile/tile-1.gif");
@@ -108,6 +110,7 @@ public class LevelLoader {
         int tileSize = 32;
 
         Level level = new Level("1-2", levelWidth, levelHeight);
+        level.setMusicTrack(BackgroundMusic.SMB_UNDERGROUND);
         level.loadBackground("background2/background2-2.gif"); // Underground Cave
 
         AssetManager am = AssetManager.getInstance();
@@ -173,6 +176,7 @@ public class LevelLoader {
         int tileSize = 32;
 
         Level level = new Level("1-3", levelWidth, levelHeight);
+        level.setMusicTrack(BackgroundMusic.SMB3_SKY);
         level.loadBackground("background2/background2-4.gif"); // Athletic Sky
 
         AssetManager am = AssetManager.getInstance();

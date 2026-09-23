@@ -1,5 +1,7 @@
 package com.supermariox.items;
 
+import com.supermariox.audio.ItemSounds;
+import com.supermariox.audio.SoundManager;
 import com.supermariox.enermy.Entity;
 import com.supermariox.graphics.Animation;
 import com.supermariox.graphics.AssetManager;
@@ -110,10 +112,12 @@ public class Item extends Entity {
 
         if (type == ItemType.COIN) {
             player.addCoins(1);
+            SoundManager.getInstance().playSound(ItemSounds.COIN);
         } else if (type == ItemType.MUSHROOM) {
             player.grow();
         } else if (type == ItemType.ONE_UP) {
             player.addLife();
+            SoundManager.getInstance().playSound(ItemSounds.ONE_UP);
         }
     }
 

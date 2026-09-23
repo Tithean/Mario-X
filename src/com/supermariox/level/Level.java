@@ -38,6 +38,14 @@ public class Level {
         loadBackground("background2/background2-1.gif");
     }
 
+    public String getMusicTrack() {
+        return musicTrack;
+    }
+
+    public void setMusicTrack(String musicTrack) {
+        this.musicTrack = musicTrack;
+    }
+
     public void loadBackground(String relativePath) {
         this.backgroundImage = AssetManager.getInstance().getImage(relativePath);
     }

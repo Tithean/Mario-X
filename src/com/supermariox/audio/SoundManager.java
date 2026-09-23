@@ -1,76 +1,128 @@
 package com.supermariox.audio;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
-public class SoundManager {
-    private static SoundManager instance;
-    private final Map<String, Clip> soundCache = new HashMap<>();
-    private Clip currentMusicClip;
+/** Coordinates music, sound effects, volume, and audio resource cleanup. */
+public final class SoundManager {
+    private static final float DEFAULT_VOLUME = 1.0f;
+
+    private final Set<AudioPlayer.Playback> activeEffects = new HashSet<>();
+    private AudioPlayer.Playback currentMusic;
     private boolean soundEnabled = true;
+    private boolean musicEnabled = true;
+    private float soundVolume = DEFAULT_VOLUME;
+    private float musicVolume = DEFAULT_VOLUME;
 
-    private SoundManager() {}
-
-    public static synchronized SoundManager getInstance() {
-        if (instance == null) {
-            instance = new SoundManager();
-        }
-        return instance;
+    private SoundManager() {
     }
 
-    public void playSound(String soundName) {
-        if (!soundEnabled) return;
+    private static class InstanceHolder {
+        private static final SoundManager INSTANCE = new SoundManager();
+    }
+
+    public static SoundManager getInstance() {
+        return InstanceHolder.INSTANCE;
+    }
+
+    public synchronized void playSound(String soundName) {
+        if (!soundEnabled) {
+            return;
+        }
+
         try {
-            File soundFile = new File("src/assets/sound/" + soundName);
-            if (!soundFile.exists()) {
-                soundFile = new File("assets/sound/" + soundName);
-            }
-            if (soundFile.exists()) {
-                AudioInputStream ais = AudioSystem.getAudioInputStream(soundFile);
-                Clip clip = AudioSystem.getClip();
-                clip.open(ais);
-                clip.start();
-            }
-        } catch (Exception e) {
-            // Silently handle if audio format (MP3) is not natively supported by Clip without spi
+            AudioPlayer.Playback playback = AudioPlayer.play("sound", soundName, false, soundVolume);
+            activeEffects.add(playback);
+            playback.onStopped(() -> closeEffect(playback));
+        } catch (Exception exception) {
+            reportAudioError("sound", soundName, exception);
         }
     }
 
-    public void playMusic(String musicName) {
-        if (!soundEnabled) return;
+    public synchronized void playMusic(String musicName) {
         stopMusic();
+        if (!musicEnabled) {
+            return;
+        }
+
         try {
-            File musicFile = new File("src/assets/music/" + musicName);
-            if (!musicFile.exists()) {
-                musicFile = new File("assets/music/" + musicName);
-            }
-            if (musicFile.exists()) {
-                AudioInputStream ais = AudioSystem.getAudioInputStream(musicFile);
-                currentMusicClip = AudioSystem.getClip();
-                currentMusicClip.open(ais);
-                currentMusicClip.loop(Clip.LOOP_CONTINUOUSLY);
-                currentMusicClip.start();
-            }
-        } catch (Exception e) {
-            // Silently handle MP3 fallback
+            currentMusic = AudioPlayer.play("music", musicName, true, musicVolume);
+        } catch (Exception exception) {
+            currentMusic = null;
+            reportAudioError("music", musicName, exception);
         }
     }
 
-    public void stopMusic() {
-        if (currentMusicClip != null && currentMusicClip.isRunning()) {
-            currentMusicClip.stop();
-            currentMusicClip.close();
-            currentMusicClip = null;
+    public synchronized void stopMusic() {
+        if (currentMusic != null) {
+            currentMusic.close();
+            currentMusic = null;
         }
     }
 
-    public void setSoundEnabled(boolean enabled) {
-        this.soundEnabled = enabled;
-        if (!enabled) stopMusic();
+    public synchronized void stopAllSounds() {
+        for (AudioPlayer.Playback playback : Set.copyOf(activeEffects)) {
+            playback.close();
+        }
+        activeEffects.clear();
+    }
+
+    public synchronized void setSoundEnabled(boolean enabled) {
+        // Kept as the master switch for compatibility with the original API.
+        soundEnabled = enabled;
+        musicEnabled = enabled;
+        if (!enabled) {
+            stopAllSounds();
+            stopMusic();
+        }
+    }
+
+    public synchronized boolean isSoundEnabled() {
+        return soundEnabled;
+    }
+
+    public synchronized void setEffectsEnabled(boolean enabled) {
+        soundEnabled = enabled;
+        if (!enabled) {
+            stopAllSounds();
+        }
+    }
+
+    public synchronized void setMusicEnabled(boolean enabled) {
+        musicEnabled = enabled;
+        if (!enabled) {
+            stopMusic();
+        }
+    }
+
+    public synchronized boolean isMusicEnabled() {
+        return musicEnabled;
+    }
+
+    public synchronized void setSoundVolume(float volume) {
+        soundVolume = clampVolume(volume);
+        for (AudioPlayer.Playback playback : activeEffects) {
+            playback.setVolume(soundVolume);
+        }
+    }
+
+    public synchronized void setMusicVolume(float volume) {
+        musicVolume = clampVolume(volume);
+        if (currentMusic != null) {
+            currentMusic.setVolume(musicVolume);
+        }
+    }
+
+    private synchronized void closeEffect(AudioPlayer.Playback playback) {
+        activeEffects.remove(playback);
+        playback.close();
+    }
+
+    private static float clampVolume(float volume) {
+        return Math.max(0.0f, Math.min(1.0f, volume));
+    }
+
+    private static void reportAudioError(String type, String name, Exception exception) {
+        System.err.printf("Could not play %s '%s': %s%n", type, name, exception.getMessage());
     }
 }

@@ -1,5 +1,8 @@
 package com.supermariox.collision;
 
+import com.supermariox.audio.EnemySounds;
+import com.supermariox.audio.EnvironmentSounds;
+import com.supermariox.audio.SoundManager;
 import com.supermariox.enermy.Enemy;
 import com.supermariox.enermy.Goomba;
 import com.supermariox.enermy.KoopaTroopa;
@@ -139,6 +142,9 @@ public class CollisionManager {
                     player.setY(blockBottom);
                     player.setVelY(0);
                     boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SMALL);
+                    SoundManager.getInstance().playSound(destroyed
+                            ? EnvironmentSounds.BLOCK_SMASH
+                            : EnvironmentSounds.BLOCK_HIT);
 
                     if (!destroyed) {
                         if (block.getType() == Block.BlockType.USED) {
@@ -193,18 +199,21 @@ public class CollisionManager {
                 // Stomp Enemy (player falling downward onto enemy top)
                 if (player.getVelY() > 0 && playerBottom <= enemyTop + 18) {
                     enemy.onStomped(player);
+                    SoundManager.getInstance().playSound(EnemySounds.STOMPED);
                 } else {
                     // Koopa shell kick
                     if (enemy instanceof KoopaTroopa) {
                         KoopaTroopa koopa = (KoopaTroopa) enemy;
                         if (koopa.isShell() && !koopa.isMovingShell()) {
                             koopa.kick(player.getX() < koopa.getX());
+                            SoundManager.getInstance().playSound(EnemySounds.SHELL_HIT);
                             continue;
                         }
                     } else if (enemy instanceof RedKoopa) {
                         RedKoopa koopa = (RedKoopa) enemy;
                         if (koopa.isShell() && !koopa.isMovingShell()) {
                             koopa.kick(player.getX() < koopa.getX());
+                            SoundManager.getInstance().playSound(EnemySounds.SHELL_HIT);
                             continue;
                         }
                     }

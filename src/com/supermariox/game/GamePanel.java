@@ -1,5 +1,7 @@
 package com.supermariox.game;
 
+import com.supermariox.audio.LevelSounds;
+import com.supermariox.audio.SoundManager;
 import com.supermariox.collision.CollisionManager;
 import com.supermariox.player.Player;
 import com.supermariox.player.PlayerState;
@@ -28,6 +30,7 @@ public class GamePanel extends JPanel {
     private final InputHandler inputHandler;
     private final Camera camera;
     private final GameUI gameUI;
+    private final SoundManager soundManager = SoundManager.getInstance();
 
     private Player player;
     private Level currentLevel;
@@ -114,9 +117,11 @@ public class GamePanel extends JPanel {
         int nextIdx = (currentLevelIndex % 3) + 1;
         initGame(nextIdx);
         gameState = GameState.PLAYING;
+        playCurrentLevelMusic();
     }
 
     public void returnToHomeScreen() {
+        soundManager.stopMusic();
         gameState = GameState.MENU;
         gameUI.setInCharacterSelect(false);
         gameUI.setInOptionsMenu(false);
@@ -152,6 +157,7 @@ public class GamePanel extends JPanel {
                 return;
             } else if (gameState == GameState.PLAYING) {
                 gameState = GameState.PAUSED;
+                soundManager.playSound(LevelSounds.PAUSE);
                 return;
             }
         }
@@ -160,8 +166,10 @@ public class GamePanel extends JPanel {
         if (inputHandler.isKeyJustPressed(KeyEvent.VK_P)) {
             if (gameState == GameState.PLAYING) {
                 gameState = GameState.PAUSED;
+                soundManager.playSound(LevelSounds.PAUSE);
             } else if (gameState == GameState.PAUSED) {
                 gameState = GameState.PLAYING;
+                soundManager.playSound(LevelSounds.PAUSE);
             }
         }
 
@@ -169,6 +177,7 @@ public class GamePanel extends JPanel {
         if (inputHandler.isRestartJustPressed()) {
             initGame(currentLevelIndex);
             gameState = GameState.PLAYING;
+            playCurrentLevelMusic();
             return;
         }
 
@@ -211,6 +220,8 @@ public class GamePanel extends JPanel {
                 // State transitions
                 if (player.getCurrentState() == PlayerState.VICTORY) {
                     gameState = GameState.VICTORY;
+                    soundManager.stopMusic();
+                    soundManager.playSound(LevelSounds.WIN);
                 } else if (player.getCurrentState() == PlayerState.DEAD) {
                     // Wait for death animation to finish before transitioning
                     deathDelayTimer++;
@@ -220,6 +231,8 @@ public class GamePanel extends JPanel {
                             player.respawn(currentLevel.getSpawnX(), currentLevel.getSpawnY());
                         } else {
                             gameState = GameState.GAME_OVER;
+                            soundManager.stopMusic();
+                            soundManager.playSound(LevelSounds.GAME_BEAT);
                         }
                     }
                 } else {
@@ -239,9 +252,11 @@ public class GamePanel extends JPanel {
                     int pSel = gameUI.getPauseMenuIndex();
                     if (pSel == 0) { // CONTINUE
                         gameState = GameState.PLAYING;
+                        soundManager.playSound(LevelSounds.PAUSE);
                     } else if (pSel == 1) { // RESTART
                         initGame(currentLevelIndex);
                         gameState = GameState.PLAYING;
+                        playCurrentLevelMusic();
                     } else if (pSel == 2) { // MAIN MENU
                         returnToHomeScreen();
                     }
@@ -261,6 +276,7 @@ public class GamePanel extends JPanel {
                     if (goSel == 0) { // RETRY
                         startNewGame();
                         gameState = GameState.PLAYING;
+                        playCurrentLevelMusic();
                     } else if (goSel == 1) { // MAIN MENU
                         returnToHomeScreen();
                     }
@@ -282,6 +298,7 @@ public class GamePanel extends JPanel {
                     } else if (vicSel == 1) { // REPLAY
                         initGame(currentLevelIndex);
                         gameState = GameState.PLAYING;
+                        playCurrentLevelMusic();
                     } else if (vicSel == 2) { // MAIN MENU
                         returnToHomeScreen();
                     }
@@ -304,6 +321,8 @@ public class GamePanel extends JPanel {
         if (gameUI.isInCharacterSelect()) {
             startNewGame();
             gameState = GameState.PLAYING;
+            soundManager.playSound(LevelSounds.SELECT);
+            playCurrentLevelMusic();
             gameUI.setInCharacterSelect(false);
             return;
         }
@@ -316,6 +335,14 @@ public class GamePanel extends JPanel {
         } else {
             startNewGame();
             gameState = GameState.PLAYING;
+            soundManager.playSound(LevelSounds.SELECT);
+            playCurrentLevelMusic();
+        }
+    }
+
+    private void playCurrentLevelMusic() {
+        if (currentLevel != null) {
+            soundManager.playMusic(currentLevel.getMusicTrack());
         }
     }
 
