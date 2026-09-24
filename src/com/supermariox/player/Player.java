@@ -168,9 +168,9 @@ public class Player extends Entity {
         }
 
         // Crouch
-        if (input.isCrouch() && onGround) {
-            currentState = PlayerState.CROUCHING;
-        }
+//        if (input.isCrouch() && onGround) {
+//            currentState = PlayerState.CROUCHING;
+//        }
     }
 
     @Override

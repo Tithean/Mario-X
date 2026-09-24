@@ -45,9 +45,9 @@ public class InputHandler extends KeyAdapter {
         return pressed;
     }
 
-    public boolean isCrouch() {
-        return isKeyDown(KeyEvent.VK_DOWN) || isKeyDown(KeyEvent.VK_S);
-    }
+//    public boolean isCrouch() {
+//        return isKeyDown(KeyEvent.VK_DOWN) || isKeyDown(KeyEvent.VK_S);
+//    }
 
     public boolean isRunOrFire() {
         return isKeyDown(KeyEvent.VK_SHIFT) || isKeyDown(KeyEvent.VK_X) || isKeyDown(KeyEvent.VK_J);
