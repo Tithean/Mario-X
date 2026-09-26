@@ -34,8 +34,10 @@ public class LevelLoader {
         AssetManager am = AssetManager.getInstance();
 
         BufferedImage groundImg = am.getImage("tile/tile-1.gif");
-        BufferedImage pipeTopImg = am.getImage("block/block-25.gif");
-        BufferedImage pipeBodyImg = am.getImage("block/block-26.gif");
+        BufferedImage pipeTopLImg  = am.getImage("block/pipe-top-L.gif");
+        BufferedImage pipeTopRImg  = am.getImage("block/pipe-top-R.gif");
+        BufferedImage pipeBodyLImg = am.getImage("block/pipe-body-L.gif");
+        BufferedImage pipeBodyRImg = am.getImage("block/pipe-body-R.gif");
 
         int groundY = levelHeight - (tileSize * 3);
 
@@ -50,15 +52,11 @@ public class LevelLoader {
             }
         }
 
-        // Pipes with Piranha Plants!
-        addPipe(level, 440, groundY, 2, pipeTopImg, pipeBodyImg);
-        addPipe(level, 700, groundY, 3, pipeTopImg, pipeBodyImg);
-        level.addEnemy(new PiranhaPlant(708, groundY - (3 * tileSize))); // Piranha Plant in pipe 2
-
-        addPipe(level, 1200, groundY, 4, pipeTopImg, pipeBodyImg);
-        level.addEnemy(new PiranhaPlant(1208, groundY - (4 * tileSize))); // Piranha Plant in pipe 3
-
-        addPipe(level, 1600, groundY, 2, pipeTopImg, pipeBodyImg);
+        // Pipes
+        addPipe(level, 440, groundY, 2, pipeTopLImg, pipeTopRImg, pipeBodyLImg, pipeBodyRImg);
+        addPipe(level, 700, groundY, 3, pipeTopLImg, pipeTopRImg, pipeBodyLImg, pipeBodyRImg);
+        addPipe(level, 1200, groundY, 4, pipeTopLImg, pipeTopRImg, pipeBodyLImg, pipeBodyRImg);
+        addPipe(level, 1600, groundY, 2, pipeTopLImg, pipeTopRImg, pipeBodyLImg, pipeBodyRImg);
 
         // Blocks
         level.addBlock(new Block(300, groundY - 128, Block.BlockType.QUESTION_COIN));
@@ -82,7 +80,6 @@ public class LevelLoader {
         // Rich Variety of Enemies (Goombas, Green Koopas, Red Koopas)
         level.addEnemy(new Goomba(400, groundY - 32));
         level.addEnemy(new Goomba(520, groundY - 32));
-        level.addEnemy(new RedKoopa(750, groundY - 44));
         level.addEnemy(new Goomba(1020, groundY - 32));
         level.addEnemy(new Goomba(1060, groundY - 32));
         level.addEnemy(new KoopaTroopa(1380, groundY - 44));
@@ -115,8 +112,10 @@ public class LevelLoader {
 
         AssetManager am = AssetManager.getInstance();
         BufferedImage caveTileImg = am.getImage("tile/tile-2.gif");
-        BufferedImage pipeTopImg = am.getImage("block/block-25.gif");
-        BufferedImage pipeBodyImg = am.getImage("block/block-26.gif");
+        BufferedImage pipeTopLImg  = am.getImage("block/pipe-top-L.gif");
+        BufferedImage pipeTopRImg  = am.getImage("block/pipe-top-R.gif");
+        BufferedImage pipeBodyLImg = am.getImage("block/pipe-body-L.gif");
+        BufferedImage pipeBodyRImg = am.getImage("block/pipe-body-R.gif");
 
         int groundY = levelHeight - (tileSize * 3);
 
@@ -147,11 +146,8 @@ public class LevelLoader {
             level.addItem(new Item(cx, groundY - 160, Item.ItemType.COIN));
         }
 
-        addPipe(level, 800, groundY, 3, pipeTopImg, pipeBodyImg);
-        level.addEnemy(new PiranhaPlant(808, groundY - (3 * tileSize)));
-
-        addPipe(level, 1800, groundY, 4, pipeTopImg, pipeBodyImg);
-        level.addEnemy(new PiranhaPlant(1808, groundY - (4 * tileSize)));
+        addPipe(level, 800, groundY, 3, pipeTopLImg, pipeTopRImg, pipeBodyLImg, pipeBodyRImg);
+        addPipe(level, 1800, groundY, 4, pipeTopLImg, pipeTopRImg, pipeBodyLImg, pipeBodyRImg);
 
         // Enemies
         level.addEnemy(new Goomba(450, groundY - 32));
@@ -222,17 +218,19 @@ public class LevelLoader {
         }
     }
 
-    private static void addPipe(Level level, int x, int groundY, int heightInTiles, BufferedImage topImg, BufferedImage bodyImg) {
+    private static void addPipe(Level level, int x, int groundY, int heightInTiles,
+                               BufferedImage topLImg, BufferedImage topRImg,
+                               BufferedImage bodyLImg, BufferedImage bodyRImg) {
         int tileSize = 32;
         int topY = groundY - (heightInTiles * tileSize);
 
-        level.addTile(new Tile(x, topY, tileSize, tileSize, true, topImg));
-        level.addTile(new Tile(x + tileSize, topY, tileSize, tileSize, true, topImg));
+        level.addTile(new Tile(x, topY, tileSize, tileSize, true, topLImg));
+        level.addTile(new Tile(x + tileSize, topY, tileSize, tileSize, true, topRImg));
 
         for (int i = 1; i < heightInTiles; i++) {
             int bodyY = topY + (i * tileSize);
-            level.addTile(new Tile(x, bodyY, tileSize, tileSize, true, bodyImg));
-            level.addTile(new Tile(x + tileSize, bodyY, tileSize, tileSize, true, bodyImg));
+            level.addTile(new Tile(x, bodyY, tileSize, tileSize, true, bodyLImg));
+            level.addTile(new Tile(x + tileSize, bodyY, tileSize, tileSize, true, bodyRImg));
         }
     }
 

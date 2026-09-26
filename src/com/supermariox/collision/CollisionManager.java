@@ -201,20 +201,25 @@ public class CollisionManager {
                     enemy.onStomped(player);
                     SoundManager.getInstance().playSound(EnemySounds.STOMPED);
                 } else {
-                    // Koopa shell kick
+                    // Koopa shell kick — only allowed once the settle timer has expired
+                    // (prevents the shell from flying away the instant it's created)
                     if (enemy instanceof KoopaTroopa) {
                         KoopaTroopa koopa = (KoopaTroopa) enemy;
-                        if (koopa.isShell() && !koopa.isMovingShell()) {
+                        if (koopa.isShell() && !koopa.isMovingShell() && !koopa.isSettling()) {
                             koopa.kick(player.getX() < koopa.getX());
                             SoundManager.getInstance().playSound(EnemySounds.SHELL_HIT);
                             continue;
+                        } else if (koopa.isShell() && koopa.isSettling()) {
+                            continue; // Shell is still settling — ignore touch
                         }
                     } else if (enemy instanceof RedKoopa) {
                         RedKoopa koopa = (RedKoopa) enemy;
-                        if (koopa.isShell() && !koopa.isMovingShell()) {
+                        if (koopa.isShell() && !koopa.isMovingShell() && !koopa.isSettling()) {
                             koopa.kick(player.getX() < koopa.getX());
                             SoundManager.getInstance().playSound(EnemySounds.SHELL_HIT);
                             continue;
+                        } else if (koopa.isShell() && koopa.isSettling()) {
+                            continue; // Shell is still settling — ignore touch
                         }
                     }
                     player.takeDamage();
@@ -231,9 +236,23 @@ public class CollisionManager {
             // Skip inactive, squished, or stationary pipe enemies
             if (!enemy.isActive() || enemy.isSquished() || enemy instanceof PiranhaPlant) continue;
 
-            // 1. Horizontal Movement & Collision
+            // --- Reset ground flag at the very top of each enemy's physics step ---
+            // Capture wasOnGround BEFORE resetting, so the ledge-AI below can use
+            // last frame's ground state (avoids a 1-frame miss on the landing frame).
+            boolean wasOnGround = enemy.isOnGround();
+            enemy.setOnGround(false);
+
+            // ----------------------------------------------------------------
+            // 1. Horizontal Movement & Wall Collision
+            // Vertical inset is +2/-4 (tight) so the sensor catches walls at
+            // ground level without false-triggering on floor tile corners.
+            // ----------------------------------------------------------------
             float nextX = enemy.getX() + enemy.getVelX();
-            Rectangle eBoundsH = new Rectangle((int) nextX, (int) (enemy.getY() + 4), enemy.getWidth(), enemy.getHeight() - 8);
+            Rectangle eBoundsH = new Rectangle(
+                (int) nextX,
+                (int) (enemy.getY() + 2),
+                enemy.getWidth(),
+                enemy.getHeight() - 4);
             boolean hitWall = false;
 
             for (Tile tile : level.getTiles()) {
@@ -266,10 +285,22 @@ public class CollisionManager {
                 enemy.setX(nextX);
             }
 
-            // Red Koopa ledge smart AI: turn around before falling off platforms
-            if (enemy instanceof RedKoopa && enemy.isOnGround() && !((RedKoopa) enemy).isMovingShell()) {
-                float checkEdgeX = enemy.getVelX() > 0 ? enemy.getX() + enemy.getWidth() + 4 : enemy.getX() - 4;
-                Rectangle ledgeSensor = new Rectangle((int) checkEdgeX, (int) (enemy.getY() + enemy.getHeight() + 2), 4, 8);
+            // ----------------------------------------------------------------
+            // Ledge-turnaround AI for walking enemies (Goomba & RedKoopa).
+            // Uses wasOnGround so it only fires when the enemy was grounded last
+            // frame — avoids triggering in mid-air or on the first landing frame.
+            // ----------------------------------------------------------------
+            boolean isWalkingEnemy = (enemy instanceof RedKoopa && !((RedKoopa) enemy).isMovingShell())
+                                  || (enemy instanceof Goomba);
+            if (isWalkingEnemy && wasOnGround) {
+                // Look one pixel ahead of the enemy's leading foot for a ground tile.
+                float checkEdgeX = enemy.getVelX() > 0
+                        ? enemy.getX() + enemy.getWidth() + 2
+                        : enemy.getX() - 2;
+                Rectangle ledgeSensor = new Rectangle(
+                    (int) checkEdgeX,
+                    (int) (enemy.getY() + enemy.getHeight() + 1),
+                    4, 8);
                 boolean groundAhead = false;
                 for (Tile tile : level.getTiles()) {
                     if (tile.isSolid() && ledgeSensor.intersects(tile.getBounds())) {
@@ -290,33 +321,44 @@ public class CollisionManager {
                 }
             }
 
-            // 2. Vertical Movement & Collision (Gravity)
-            enemy.setOnGround(false);
+            // ----------------------------------------------------------------
+            // 2. Vertical Movement & Collision (gravity applied in enemy.update())
+            // ----------------------------------------------------------------
             float nextY = enemy.getY() + enemy.getVelY();
-            Rectangle eBoundsV = new Rectangle((int) enemy.getX() + 2, (int) nextY, enemy.getWidth() - 4, enemy.getHeight());
+            Rectangle eBoundsV = new Rectangle(
+                (int) enemy.getX() + 2,
+                (int) nextY,
+                enemy.getWidth() - 4,
+                enemy.getHeight());
             boolean landed = false;
 
             for (Tile tile : level.getTiles()) {
                 if (tile.isSolid() && eBoundsV.intersects(tile.getBounds())) {
-                    if (enemy.getVelY() >= 0) {
+                    if (enemy.getVelY() >= 0) { // Falling: snap to top surface of tile
                         enemy.setY(tile.getY() - enemy.getHeight());
                         enemy.setVelY(0);
                         enemy.setOnGround(true);
-                        landed = true;
-                        break;
+                    } else {                     // Rising: snap to underside of tile (ceiling)
+                        enemy.setY(tile.getY() + tile.getHeight());
+                        enemy.setVelY(0);
                     }
+                    landed = true;
+                    break;
                 }
             }
             if (!landed) {
                 for (Block block : level.getBlocks()) {
                     if (block.isActive() && !block.isDestroyed() && eBoundsV.intersects(block.getBounds())) {
-                        if (enemy.getVelY() >= 0) {
+                        if (enemy.getVelY() >= 0) { // Falling: snap to top of block
                             enemy.setY(block.getY() - enemy.getHeight());
                             enemy.setVelY(0);
                             enemy.setOnGround(true);
-                            landed = true;
-                            break;
+                        } else {                     // Rising: snap to underside of block
+                            enemy.setY(block.getY() + block.getHeight());
+                            enemy.setVelY(0);
                         }
+                        landed = true;
+                        break;
                     }
                 }
             }
@@ -324,7 +366,31 @@ public class CollisionManager {
                 enemy.setY(nextY);
             }
 
-            // 3. Moving Shell Collisions
+            // Ground sensor: prevents 1-frame flicker when enemy straddles two tile edges
+            if (!enemy.isOnGround() && enemy.getVelY() >= 0) {
+                Rectangle feetSensor = new Rectangle(
+                    (int) enemy.getX() + 2,
+                    (int) (enemy.getY() + enemy.getHeight()),
+                    enemy.getWidth() - 4, 3);
+                for (Tile tile : level.getTiles()) {
+                    if (tile.isSolid() && feetSensor.intersects(tile.getBounds())) {
+                        enemy.setOnGround(true);
+                        break;
+                    }
+                }
+                if (!enemy.isOnGround()) {
+                    for (Block block : level.getBlocks()) {
+                        if (block.isActive() && !block.isDestroyed() && feetSensor.intersects(block.getBounds())) {
+                            enemy.setOnGround(true);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // 3. Moving Shell vs Enemy Collisions
+            // ----------------------------------------------------------------
             boolean isShellMoving = false;
             if (enemy instanceof KoopaTroopa && ((KoopaTroopa) enemy).isShell() && ((KoopaTroopa) enemy).isMovingShell()) {
                 isShellMoving = true;
@@ -387,4 +453,3 @@ public class CollisionManager {
         }
     }
 }
-

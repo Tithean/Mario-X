@@ -10,8 +10,15 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class RedKoopa extends Enemy {
+    private static final float WALK_SPEED = 1.2f;
+    private static final float SHELL_SPEED = 8.5f;
+
+    // After being stomped into a shell, ignore kick inputs for this many frames
+    private static final int SHELL_SETTLE_FRAMES = 20;
+
     private boolean isShell = false;
     private boolean movingShell = false;
+    private int shellSettleTimer = 0; // counts down to 0; kick blocked while > 0
 
     private Animation walkAnimLeft;
     private Animation walkAnimRight;
@@ -19,7 +26,7 @@ public class RedKoopa extends Enemy {
 
     public RedKoopa(float x, float y) {
         super(x, y, 32, 44);
-        this.velX = -1.2f;
+        this.velX = -WALK_SPEED;
         loadGraphics();
     }
 
@@ -32,13 +39,18 @@ public class RedKoopa extends Enemy {
             SpriteSheet sheet = new SpriteSheet(walkSheet);
             BufferedImage[] frames = sheet.getVerticalFrames(32, 48, 4);
             BufferedImage f1 = frames[0];
-            BufferedImage f2 = frames[1];
+            BufferedImage f2 = (frames.length > 1) ? frames[1] : frames[0];
 
-            walkAnimLeft = new Animation(new BufferedImage[]{f1, f2}, 10, true);
-            walkAnimRight = new Animation(new BufferedImage[]{
-                    Animation.flipHorizontally(f1),
-                    Animation.flipHorizontally(f2)
-            }, 10, true);
+            if (f1 != null && f2 != null) {
+                walkAnimLeft = new Animation(new BufferedImage[]{f1, f2}, 10, true);
+                walkAnimRight = new Animation(new BufferedImage[]{
+                        Animation.flipHorizontally(f1),
+                        Animation.flipHorizontally(f2)
+                }, 10, true);
+            } else if (f1 != null) {
+                walkAnimLeft = new Animation(f1);
+                walkAnimRight = new Animation(Animation.flipHorizontally(f1));
+            }
         }
 
         // Red Koopa Shell (npc-7.gif)
@@ -58,13 +70,21 @@ public class RedKoopa extends Enemy {
         if (velY > 10.0f) velY = 10.0f;
 
         if (isShell) {
+            // Tick down the settle cooldown
+            if (shellSettleTimer > 0) shellSettleTimer--;
+
             if (movingShell && shellAnim != null) {
                 shellAnim.update();
             }
         } else {
+            // Guard against velX=0 stuck state for a walking RedKoopa
+            if (velX == 0) {
+                velX = facingRight ? WALK_SPEED : -WALK_SPEED;
+            }
+
             if (velX > 0 && walkAnimRight != null) {
                 walkAnimRight.update();
-            } else if (velX <= 0 && walkAnimLeft != null) {
+            } else if (velX < 0 && walkAnimLeft != null) {
                 walkAnimLeft.update();
             }
         }
@@ -100,27 +120,28 @@ public class RedKoopa extends Enemy {
     @Override
     public void onStomped(Player player) {
         player.setVelY(-6.5f);
-        player.addScore(100);
 
         if (!isShell) {
+            // 1st stomp: turn into a still shell — stays in place
             isShell = true;
+            movingShell = false;
             velX = 0;
             height = 32;
             y += 12;
+            shellSettleTimer = SHELL_SETTLE_FRAMES;
+            player.addScore(100);
         } else {
-            if (movingShell) {
-                movingShell = false;
-                velX = 0;
-            } else {
-                kick(player.getX() < x);
-            }
+            // 2nd stomp on shell: RedKoopa dies
+            active = false;
+            player.addScore(200);
         }
     }
 
     public void kick(boolean fromLeft) {
         isShell = true;
         movingShell = true;
-        velX = fromLeft ? 8.5f : -8.5f;
+        shellSettleTimer = 0;
+        velX = fromLeft ? SHELL_SPEED : -SHELL_SPEED;
     }
 
     @Override
@@ -130,4 +151,7 @@ public class RedKoopa extends Enemy {
 
     public boolean isShell() { return isShell; }
     public boolean isMovingShell() { return movingShell; }
+
+    /** True while the shell is settling after a stomp — cannot be kicked yet. */
+    public boolean isSettling() { return shellSettleTimer > 0; }
 }

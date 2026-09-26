@@ -125,6 +125,7 @@ public class GamePanel extends JPanel {
         gameState = GameState.MENU;
         gameUI.setInCharacterSelect(false);
         gameUI.setInOptionsMenu(false);
+        gameUI.setInWorldsMenu(false);
     }
 
     public void update() {
@@ -147,6 +148,9 @@ public class GamePanel extends JPanel {
             if (gameState == GameState.MENU) {
                 if (gameUI.isInOptionsMenu()) {
                     gameUI.setInOptionsMenu(false);
+                    return;
+                } else if (gameUI.isInWorldsMenu()) {
+                    gameUI.setInWorldsMenu(false);
                     return;
                 } else if (gameUI.isInCharacterSelect()) {
                     gameUI.setInCharacterSelect(false);
@@ -318,6 +322,20 @@ public class GamePanel extends JPanel {
             return;
         }
 
+        if (gameUI.isInWorldsMenu()) {
+            int wSel = gameUI.getWorldsIndex();
+            if (wSel >= 0 && wSel <= 2) {
+                initGame(wSel + 1);
+                gameState = GameState.PLAYING;
+                soundManager.playSound(LevelSounds.SELECT);
+                playCurrentLevelMusic();
+                gameUI.setInWorldsMenu(false);
+            } else if (wSel == 3) {
+                gameUI.setInWorldsMenu(false);
+            }
+            return;
+        }
+
         if (gameUI.isInCharacterSelect()) {
             startNewGame();
             gameState = GameState.PLAYING;
@@ -328,15 +346,13 @@ public class GamePanel extends JPanel {
         }
 
         int sel = gameUI.getMenuIndex();
-        if (sel == 0) { // 1 Player Game -> Character Select
+        if (sel == 0) { // START GAME
             gameUI.setInCharacterSelect(true);
-        } else if (sel == 3) { // Screen & Options
-            gameUI.setInOptionsMenu(true);
-        } else {
-            startNewGame();
-            gameState = GameState.PLAYING;
+        } else if (sel == 1) { // WORLDS
+            gameUI.setInWorldsMenu(true);
             soundManager.playSound(LevelSounds.SELECT);
-            playCurrentLevelMusic();
+        } else if (sel == 2) { // QUIT
+            System.exit(0);
         }
     }
 

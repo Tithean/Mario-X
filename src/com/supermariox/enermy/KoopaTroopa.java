@@ -10,8 +10,16 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class KoopaTroopa extends Enemy {
+    private static final float WALK_SPEED = 1.2f;
+    private static final float SHELL_SPEED = 8.5f;
+
+    // After being stomped into a shell, ignore kick inputs for this many frames
+    // so the shell doesn't instantly fly away from under Mario's feet.
+    private static final int SHELL_SETTLE_FRAMES = 20;
+
     private boolean isShell = false;
     private boolean movingShell = false;
+    private int shellSettleTimer = 0; // counts down to 0; kick blocked while > 0
 
     private Animation walkAnimLeft;
     private Animation walkAnimRight;
@@ -19,6 +27,7 @@ public class KoopaTroopa extends Enemy {
 
     public KoopaTroopa(float x, float y) {
         super(x, y, 32, 44);
+        this.velX = -WALK_SPEED;
         loadGraphics();
     }
 
@@ -33,11 +42,16 @@ public class KoopaTroopa extends Enemy {
             BufferedImage f1 = cropKoopa(frames[0]);
             BufferedImage f2 = cropKoopa(frames[1]);
 
-            walkAnimLeft = new Animation(new BufferedImage[]{f1, f2}, 10, true);
-            walkAnimRight = new Animation(new BufferedImage[]{
-                    Animation.flipHorizontally(f1),
-                    Animation.flipHorizontally(f2)
-            }, 10, true);
+            if (f1 != null && f2 != null) {
+                walkAnimLeft = new Animation(new BufferedImage[]{f1, f2}, 10, true);
+                walkAnimRight = new Animation(new BufferedImage[]{
+                        Animation.flipHorizontally(f1),
+                        Animation.flipHorizontally(f2)
+                }, 10, true);
+            } else if (f1 != null) {
+                walkAnimLeft = new Animation(f1);
+                walkAnimRight = new Animation(Animation.flipHorizontally(f1));
+            }
         }
 
         // Koopa Shell (npc-5.gif)
@@ -67,13 +81,21 @@ public class KoopaTroopa extends Enemy {
         if (velY > 10.0f) velY = 10.0f;
 
         if (isShell) {
+            // Tick down the settle cooldown
+            if (shellSettleTimer > 0) shellSettleTimer--;
+
             if (movingShell && shellAnim != null) {
                 shellAnim.update();
             }
         } else {
+            // Guard against velX=0 stuck state for a walking Koopa
+            if (velX == 0) {
+                velX = facingRight ? WALK_SPEED : -WALK_SPEED;
+            }
+
             if (velX > 0 && walkAnimRight != null) {
                 walkAnimRight.update();
-            } else if (velX <= 0 && walkAnimLeft != null) {
+            } else if (velX < 0 && walkAnimLeft != null) {
                 walkAnimLeft.update();
             }
         }
@@ -109,27 +131,28 @@ public class KoopaTroopa extends Enemy {
     @Override
     public void onStomped(Player player) {
         player.setVelY(-6.5f); // Player bounce
-        player.addScore(100);
 
         if (!isShell) {
+            // 1st stomp: turn into a still shell — stays in place
             isShell = true;
+            movingShell = false;
             velX = 0;
             height = 32;
-            y += 12; // Adjust height transition
+            y += 12; // Adjust for height change
+            shellSettleTimer = SHELL_SETTLE_FRAMES;
+            player.addScore(100);
         } else {
-            if (movingShell) {
-                movingShell = false;
-                velX = 0;
-            } else {
-                kick(player.getX() < x);
-            }
+            // 2nd stomp on shell: Koopa dies
+            active = false;
+            player.addScore(200);
         }
     }
 
     public void kick(boolean fromLeft) {
         isShell = true;
         movingShell = true;
-        velX = fromLeft ? 8.5f : -8.5f;
+        shellSettleTimer = 0;
+        velX = fromLeft ? SHELL_SPEED : -SHELL_SPEED;
     }
 
     @Override
@@ -139,4 +162,7 @@ public class KoopaTroopa extends Enemy {
 
     public boolean isShell() { return isShell; }
     public boolean isMovingShell() { return movingShell; }
+
+    /** True while the shell is settling after a stomp — cannot be kicked yet. */
+    public boolean isSettling() { return shellSettleTimer > 0; }
 }

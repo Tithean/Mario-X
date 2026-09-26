@@ -10,11 +10,14 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class Goomba extends Enemy {
+    private static final float WALK_SPEED = 1.2f;
+
     private Animation walkAnim;
     private BufferedImage squishedImg;
 
     public Goomba(float x, float y) {
         super(x, y, 32, 32);
+        this.velX = -WALK_SPEED; // Walk left by default
         loadGraphics();
     }
 
@@ -24,14 +27,22 @@ public class Goomba extends Enemy {
 
         if (sheetImg != null) {
             SpriteSheet sheet = new SpriteSheet(sheetImg);
+            // npc-1.gif has 2 walk frames stacked vertically, each 32x32
             BufferedImage[] frames = sheet.getVerticalFrames(32, 32, 2);
-            walkAnim = new Animation(frames, 10, true);
-        }
+            if (frames[0] != null && frames[1] != null) {
+                walkAnim = new Animation(frames, 10, true);
+            } else if (frames[0] != null) {
+                walkAnim = new Animation(frames[0]);
+            }
 
-        // Squished Goomba frame (flat)
-        BufferedImage flatBase = am.getImage("npc/npc-1.gif");
-        if (flatBase != null) {
-            squishedImg = new SpriteSheet(flatBase).getSprite(0, 0, 32, 16);
+            // Squished frame: a thin flat sprite at the bottom of the sheet (row 2, height 16)
+            if (sheetImg.getHeight() >= 80) {
+                squishedImg = sheet.getSprite(0, 64, 32, 16);
+            }
+            // Fallback: squash first walk frame to half height
+            if (squishedImg == null && frames[0] != null) {
+                squishedImg = frames[0];
+            }
         }
     }
 
@@ -45,6 +56,12 @@ public class Goomba extends Enemy {
                 active = false;
             }
             return;
+        }
+
+        // Keep walk speed constant — velX should never be 0 for a live Goomba.
+        // This guards against any sticking bug that zeroes out velX without reversing.
+        if (velX == 0) {
+            velX = facingRight ? WALK_SPEED : -WALK_SPEED;
         }
 
         // Apply gravity

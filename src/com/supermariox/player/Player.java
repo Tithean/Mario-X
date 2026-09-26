@@ -32,6 +32,8 @@ public class Player extends Entity {
     private int jumpsRemaining = 2;
 
     private PlayerState currentState = PlayerState.IDLE;
+    private PlayerState previousState = PlayerState.IDLE;
+    private boolean previousFacingRight = true;
     private PlayerPower currentPower = PlayerPower.SUPER; // Super Mario only
 
     private int lives = 3;
@@ -51,49 +53,78 @@ public class Player extends Entity {
 
     private void loadAnimations() {
         AssetManager am = AssetManager.getInstance();
-        loadPowerAnimations(am, "mario-2.gif", PlayerPower.SUPER);
-        loadPowerAnimations(am, "mario-1.gif", PlayerPower.SMALL);
-        loadPowerAnimations(am, "mario-3.gif", PlayerPower.FIRE);
+        loadPowerAnimations(am, "mario.gif", PlayerPower.SUPER);
     }
 
     private void loadPowerAnimations(AssetManager am, String sheetName, PlayerPower power) {
         BufferedImage sheetImg = am.getImage("mario/" + sheetName);
         if (sheetImg == null) return;
 
-        SpriteSheet sheet = new SpriteSheet(sheetImg);
-        BufferedImage[][] grid = sheet.getGridFrames(10, 10, 100, 100);
+        BufferedImage idleFrame, run1, run2, run3, jumpFrame, skidFrame, crouchFrame, deadFrame;
 
-        // Standard Super Mario World / SMBX walking & running frames:
-        // [0][4] = Idle standing
-        // [0][5] = Run frame 1 (stride)
-        // [1][4] = Run frame 2 (passing)
-        // [1][5] = Run frame 3 (reach)
-        // [2][5] = Jump
-        // [2][4] = Crouch
-        // [0][8] = Skid / Turn
-        // [0][9] = Dead
-        BufferedImage idleFrame = autoCrop(grid[0][4]);
-        BufferedImage run1 = autoCrop(grid[0][5]);
-        BufferedImage run2 = autoCrop(grid[1][4]);
-        BufferedImage run3 = autoCrop(grid[1][5]);
-        BufferedImage jumpFrame = autoCrop(grid[2][5]);
-        BufferedImage skidFrame = autoCrop(grid[0][8]);
-        BufferedImage crouchFrame = autoCrop(grid[2][4]);
-        BufferedImage deadFrame = autoCrop(grid[0][9]);
+        if (sheetImg.getWidth() <= 600 && sheetImg.getHeight() <= 300) {
+            // New mario.gif: 3 horizontal frames (e.g. 540x220, 180px each)
+            // Frame 0: Idle/stand, Frame 1: Step 1, Frame 2: Step 2
+            int frameW = sheetImg.getWidth() / 3;
+            int frameH = sheetImg.getHeight();
+
+            idleFrame   = autoCrop(sheetImg.getSubimage(0, 0, frameW, frameH));
+            run1        = autoCrop(sheetImg.getSubimage(frameW, 0, frameW, frameH));
+            run2        = autoCrop(sheetImg.getSubimage(frameW * 2, 0, frameW, frameH));
+            run3        = null; // Use 4-frame cycle (run1 -> idle -> run2 -> idle)
+            jumpFrame   = run1;
+            skidFrame   = idleFrame;
+            crouchFrame = idleFrame;
+            deadFrame   = idleFrame;
+        } else {
+            SpriteSheet sheet = new SpriteSheet(sheetImg);
+            BufferedImage[][] grid = sheet.getGridFrames(10, 10, 100, 100);
+
+            // Verified frame map for 10x10 grid sheets (mario-2.gif)
+            idleFrame   = autoCrop(grid[0][5]);
+            run1        = autoCrop(grid[0][4]);
+            run2        = autoCrop(grid[1][4]);
+            run3        = autoCrop(grid[1][5]);
+            jumpFrame   = autoCrop(grid[2][5]);
+            skidFrame   = autoCrop(grid[0][8]);
+            crouchFrame = autoCrop(grid[2][4]);
+            deadFrame   = autoCrop(grid[9][0]);
+        }
 
         // Fallbacks
-        if (idleFrame == null) idleFrame = autoCrop(grid[0][5]);
-        if (run1 == null) run1 = idleFrame;
-        if (run2 == null) run2 = idleFrame;
-        if (run3 == null) run3 = idleFrame;
-        if (jumpFrame == null) jumpFrame = idleFrame;
-        if (skidFrame == null) skidFrame = idleFrame;
+        if (idleFrame == null)   idleFrame   = run1;
+        if (run1 == null)        run1        = idleFrame;
+        if (run2 == null)        run2        = idleFrame;
+        if (jumpFrame == null)   jumpFrame   = idleFrame;
+        if (skidFrame == null)   skidFrame   = idleFrame;
         if (crouchFrame == null) crouchFrame = idleFrame;
-        if (deadFrame == null) deadFrame = idleFrame;
+        if (deadFrame == null)   deadFrame   = idleFrame;
+
+        // Running animation sequence
+        BufferedImage[] runRightFrames;
+        BufferedImage[] runLeftFrames;
+
+        if (run3 != null) {
+            runRightFrames = new BufferedImage[]{run1, run2, run3};
+            runLeftFrames = new BufferedImage[]{
+                    Animation.flipHorizontally(run1),
+                    Animation.flipHorizontally(run2),
+                    Animation.flipHorizontally(run3)
+            };
+        } else {
+            // Fluid 4-phase stride: Step 1 -> Pass -> Step 2 -> Pass
+            runRightFrames = new BufferedImage[]{run1, idleFrame, run2, idleFrame};
+            runLeftFrames = new BufferedImage[]{
+                    Animation.flipHorizontally(run1),
+                    Animation.flipHorizontally(idleFrame),
+                    Animation.flipHorizontally(run2),
+                    Animation.flipHorizontally(idleFrame)
+            };
+        }
 
         // Right animations
         animations.put(power + "_IDLE_R", new Animation(idleFrame));
-        animations.put(power + "_RUNNING_R", new Animation(new BufferedImage[]{run1, run2, run3}, 6, true));
+        animations.put(power + "_RUNNING_R", new Animation(runRightFrames, 6, true));
         animations.put(power + "_JUMPING_R", new Animation(jumpFrame));
         animations.put(power + "_FALLING_R", new Animation(jumpFrame));
         animations.put(power + "_SKIDDING_R", new Animation(skidFrame));
@@ -102,11 +133,7 @@ public class Player extends Entity {
 
         // Left animations (flipped horizontally)
         animations.put(power + "_IDLE_L", new Animation(Animation.flipHorizontally(idleFrame)));
-        animations.put(power + "_RUNNING_L", new Animation(new BufferedImage[]{
-                Animation.flipHorizontally(run1),
-                Animation.flipHorizontally(run2),
-                Animation.flipHorizontally(run3)
-        }, 6, true));
+        animations.put(power + "_RUNNING_L", new Animation(runLeftFrames, 6, true));
         animations.put(power + "_JUMPING_L", new Animation(Animation.flipHorizontally(jumpFrame)));
         animations.put(power + "_FALLING_L", new Animation(Animation.flipHorizontally(jumpFrame)));
         animations.put(power + "_SKIDDING_L", new Animation(Animation.flipHorizontally(skidFrame)));
@@ -237,7 +264,15 @@ public class Player extends Entity {
             currentState = PlayerState.IDLE;
         }
 
-        // Update active animation frame
+        // Reset animation when state changes OR direction changes so we start from frame 0
+        if (currentState != previousState || facingRight != previousFacingRight) {
+            Animation newAnim = getCurrentAnimation();
+            if (newAnim != null) newAnim.reset();
+            previousState = currentState;
+            previousFacingRight = facingRight;
+        }
+
+        // Only update the currently active animation
         Animation anim = getCurrentAnimation();
         if (anim != null) {
             anim.update();
@@ -303,6 +338,7 @@ public class Player extends Entity {
         this.velX = 0;
         this.velY = 0;
         this.currentState = PlayerState.IDLE;
+        this.previousState = PlayerState.IDLE;
         this.currentPower = PlayerPower.SUPER;
         this.width = 30;
         this.height = 54;

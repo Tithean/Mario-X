@@ -18,10 +18,12 @@ public class GameUI {
     private final Font subFont = new Font("Arial", Font.BOLD, 18);
     private final Font toastFont = new Font("Arial", Font.BOLD, 16);
 
-    private int menuIndex = 0; // 0: 1 Player, 1: 2 Player, 2: Battle, 3: Options
+    private int menuIndex = 0; // 0: START GAME, 1: WORLDS, 2: QUIT
     private int characterIndex = 0; // 0: Mario, 1: Luigi, 2: Peach, 3: Toad, 4: Link
     private boolean inCharacterSelect = false;
     private boolean inOptionsMenu = false;
+    private boolean inWorldsMenu = false;
+    private int worldsIndex = 0; // 0: 1-1, 1: 1-2, 2: 1-3, 3: Back
 
     private int optionsIndex = 0; // 0: Screen Resolution / Fullscreen, 1: Apply, 2: Back
     private int resolutionChoice = 0; // 0: 960x540 (1x), 1: 1280x720 (1.33x), 2: 1600x900 (1.66x), 3: 1920x1080 (2x), 4: Fullscreen
@@ -146,6 +148,8 @@ public class GameUI {
         // 3. Render Menus
         if (inOptionsMenu) {
             renderOptionsMenu(g, screenWidth, screenHeight);
+        } else if (inWorldsMenu) {
+            renderWorldsMenu(g, screenWidth, screenHeight);
         } else if (inCharacterSelect) {
             renderCharacterSelect(g, screenWidth, screenHeight);
         } else {
@@ -156,14 +160,13 @@ public class GameUI {
     private void renderMenuOptions(Graphics2D g, int screenWidth, int screenHeight) {
         g.setFont(menuFont);
         String[] options = {
-                "1 PLAYER GAME",
-                "2 PLAYER GAME",
-                "BATTLE GAME",
-                "SCREEN & OPTIONS"
+                "START GAME",
+                "WORLDS",
+                "QUIT"
         };
 
-        int startY = 300;
-        int spacing = 40;
+        int startY = 320;
+        int spacing = 48;
 
         for (int i = 0; i < options.length; i++) {
             int y = startY + (i * spacing);
@@ -183,6 +186,43 @@ public class GameUI {
             } else {
                 g.setColor(Color.WHITE);
                 drawCenteredString(g, options[i], screenWidth, y);
+            }
+        }
+    }
+
+    private void renderWorldsMenu(Graphics2D g, int screenWidth, int screenHeight) {
+        g.setFont(menuFont);
+        g.setColor(Color.YELLOW);
+        drawCenteredString(g, "--- SELECT WORLD ---", screenWidth, 290);
+
+        String[] worldOptions = {
+                "WORLD 1-1  (GRASSLAND)",
+                "WORLD 1-2  (UNDERGROUND)",
+                "WORLD 1-3  (SKY ATHLETIC)",
+                "BACK TO MAIN MENU"
+        };
+
+        int startY = 330;
+        int spacing = 38;
+
+        for (int i = 0; i < worldOptions.length; i++) {
+            int y = startY + (i * spacing);
+
+            g.setColor(Color.BLACK);
+            drawCenteredString(g, worldOptions[i], screenWidth + 3, y + 3);
+
+            if (i == worldsIndex) {
+                g.setColor(i == 3 ? Color.YELLOW : new Color(100, 255, 100));
+                drawCenteredString(g, worldOptions[i], screenWidth, y);
+
+                FontMetrics fm = g.getFontMetrics(menuFont);
+                int textW = fm.stringWidth(worldOptions[i]);
+                int cursorX = (screenWidth - textW) / 2 - 28;
+                g.setColor(new Color(255, 50, 50));
+                g.drawString("▶", cursorX, y);
+            } else {
+                g.setColor(Color.WHITE);
+                drawCenteredString(g, worldOptions[i], screenWidth, y);
             }
         }
     }
@@ -474,20 +514,24 @@ public class GameUI {
     public void navigateMenuUp() {
         if (inOptionsMenu) {
             optionsIndex = (optionsIndex - 1 + 3) % 3;
+        } else if (inWorldsMenu) {
+            worldsIndex = (worldsIndex - 1 + 4) % 4;
         } else if (inCharacterSelect) {
             characterIndex = (characterIndex - 1 + 5) % 5;
         } else {
-            menuIndex = (menuIndex - 1 + 4) % 4;
+            menuIndex = (menuIndex - 1 + 3) % 3;
         }
     }
 
     public void navigateMenuDown() {
         if (inOptionsMenu) {
             optionsIndex = (optionsIndex + 1) % 3;
+        } else if (inWorldsMenu) {
+            worldsIndex = (worldsIndex + 1) % 4;
         } else if (inCharacterSelect) {
             characterIndex = (characterIndex + 1) % 5;
         } else {
-            menuIndex = (menuIndex + 1) % 4;
+            menuIndex = (menuIndex + 1) % 3;
         }
     }
 
@@ -565,6 +609,9 @@ public class GameUI {
     public void setInCharacterSelect(boolean inCharacterSelect) { this.inCharacterSelect = inCharacterSelect; }
     public boolean isInOptionsMenu() { return inOptionsMenu; }
     public void setInOptionsMenu(boolean inOptionsMenu) { this.inOptionsMenu = inOptionsMenu; }
+    public boolean isInWorldsMenu() { return inWorldsMenu; }
+    public void setInWorldsMenu(boolean inWorldsMenu) { this.inWorldsMenu = inWorldsMenu; }
+    public int getWorldsIndex() { return worldsIndex; }
     public int getOptionsIndex() { return optionsIndex; }
     public int getResolutionChoice() { return resolutionChoice; }
 
