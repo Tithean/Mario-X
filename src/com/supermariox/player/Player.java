@@ -21,7 +21,7 @@ public class Player extends Entity {
     private static final float MAX_RUN_SPEED = 6.5f;
     private static final float FRICTION = 0.82f;
     private static final float GRAVITY = 0.45f;
-    private static final float JUMP_FORCE = -11.2f; // Increased jump height to allow clearing obstacles and jumping onto high blocks
+    private static final float JUMP_FORCE = -12.0f; // 160px peak jump height: allows effortless jump-skipping onto authentic groundY - 128 blocks
     private static final float MAX_FALL_SPEED = 10.5f;
 
     // Jump buffer & coyote time

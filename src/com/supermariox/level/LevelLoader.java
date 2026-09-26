@@ -59,34 +59,34 @@ public class LevelLoader {
 
         addPipe(level, 1600, groundY, 2, pipeTopImg, pipeBodyImg);
 
-        // Blocks - tuned to standard 3-tile height so Mario can comfortably jump on top and jump skip
-        level.addBlock(new Block(300, groundY - 96, Block.BlockType.QUESTION_COIN));
-        level.addBlock(new Block(360, groundY - 96, Block.BlockType.BRICK));
-        level.addBlock(new Block(392, groundY - 96, Block.BlockType.QUESTION_MUSHROOM));
-        level.addBlock(new Block(424, groundY - 96, Block.BlockType.BRICK));
-        level.addBlock(new Block(456, groundY - 96, Block.BlockType.QUESTION_COIN));
+        // Blocks - authentic original Super Mario Bros height (3 empty tiles / 96px clearance beneath, block top at groundY - 128)
+        level.addBlock(new Block(300, groundY - 128, Block.BlockType.QUESTION_COIN));
+        level.addBlock(new Block(360, groundY - 128, Block.BlockType.BRICK));
+        level.addBlock(new Block(392, groundY - 128, Block.BlockType.QUESTION_MUSHROOM));
+        level.addBlock(new Block(424, groundY - 128, Block.BlockType.BRICK));
+        level.addBlock(new Block(456, groundY - 128, Block.BlockType.QUESTION_COIN));
 
         // Floating Brick Row
         for (int bx = 950; bx <= 1100; bx += 32) {
             if (bx == 1014) {
-                level.addBlock(new Block(bx, groundY - 96, Block.BlockType.QUESTION_MUSHROOM));
+                level.addBlock(new Block(bx, groundY - 128, Block.BlockType.QUESTION_MUSHROOM));
             } else {
-                level.addBlock(new Block(bx, groundY - 96, Block.BlockType.BRICK));
+                level.addBlock(new Block(bx, groundY - 128, Block.BlockType.BRICK));
             }
         }
 
         // Pyramid
         buildPyramid(level, 3000, groundY, 5, groundImg);
 
-        // Rich Variety of Enemies (Goombas, Green Koopas, Red Koopas)
+        // Rich Variety of Enemies (Goombas, Green Koopas, Red Koopas) with open patrol runways
         level.addEnemy(new Goomba(380, groundY - 32));
         level.addEnemy(new Goomba(480, groundY - 32));
-        level.addEnemy(new RedKoopa(750, groundY - 44));
+        level.addEnemy(new RedKoopa(940, groundY - 44));
         level.addEnemy(new Goomba(1020, groundY - 32));
-        level.addEnemy(new Goomba(1060, groundY - 32));
+        level.addEnemy(new Goomba(1080, groundY - 32));
         level.addEnemy(new KoopaTroopa(1380, groundY - 44));
-        level.addEnemy(new RedKoopa(1750, groundY - 44));
-        level.addEnemy(new Goomba(2100, groundY - 32));
+        level.addEnemy(new RedKoopa(2000, groundY - 44));
+        level.addEnemy(new Goomba(2150, groundY - 32));
         level.addEnemy(new Goomba(2400, groundY - 32));
         level.addEnemy(new RedKoopa(2650, groundY - 44));
 
@@ -136,9 +136,9 @@ public class LevelLoader {
 
         // Subterranean Platforms & Blocks
         for (int bx = 400; bx <= 600; bx += 32) {
-            level.addBlock(new Block(bx, groundY - 96, Block.BlockType.BRICK));
+            level.addBlock(new Block(bx, groundY - 128, Block.BlockType.BRICK));
         }
-        level.addBlock(new Block(500, groundY - 192, Block.BlockType.QUESTION_MUSHROOM));
+        level.addBlock(new Block(500, groundY - 224, Block.BlockType.QUESTION_MUSHROOM));
 
         // Coin vault
         for (int cx = 1300; cx <= 1500; cx += 32) {

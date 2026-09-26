@@ -250,9 +250,9 @@ public class CollisionManager {
             for (Tile tile : level.getTiles()) {
                 if (tile.isSolid() && eBoundsH.intersects(tile.getBounds())) {
                     if (enemy.getVelX() > 0) {
-                        enemy.setX(tile.getX() - enemy.getWidth());
+                        enemy.setX(tile.getX() - enemy.getWidth() - 1);
                     } else if (enemy.getVelX() < 0) {
-                        enemy.setX(tile.getX() + tile.getWidth());
+                        enemy.setX(tile.getX() + tile.getWidth() + 1);
                     }
                     enemy.reverseDirection();
                     hitWall = true;
@@ -263,9 +263,9 @@ public class CollisionManager {
                 for (Block block : level.getBlocks()) {
                     if (block.isActive() && !block.isDestroyed() && eBoundsH.intersects(block.getBounds())) {
                         if (enemy.getVelX() > 0) {
-                            enemy.setX(block.getX() - enemy.getWidth());
+                            enemy.setX(block.getX() - enemy.getWidth() - 1);
                         } else if (enemy.getVelX() < 0) {
-                            enemy.setX(block.getX() + block.getWidth());
+                            enemy.setX(block.getX() + block.getWidth() + 1);
                         }
                         enemy.reverseDirection();
                         hitWall = true;
@@ -277,8 +277,8 @@ public class CollisionManager {
                 enemy.setX(nextX);
             }
 
-            // Red Koopa ledge smart AI: turn around before falling off platforms
-            if (enemy instanceof RedKoopa && enemy.isOnGround() && !((RedKoopa) enemy).isMovingShell()) {
+            // Red Koopa ledge smart AI: turn around before falling off platforms (ONLY if not already bounced off a wall)
+            if (!hitWall && enemy instanceof RedKoopa && enemy.isOnGround() && !((RedKoopa) enemy).isMovingShell()) {
                 float checkEdgeX = enemy.getVelX() > 0 ? enemy.getX() + enemy.getWidth() + 4 : enemy.getX() - 4;
                 Rectangle ledgeSensor = new Rectangle((int) checkEdgeX, (int) (enemy.getY() + enemy.getHeight() + 2), 4, 8);
                 boolean groundAhead = false;
@@ -304,7 +304,8 @@ public class CollisionManager {
             // 2. Vertical Movement & Collision (Gravity)
             enemy.setOnGround(false);
             float nextY = enemy.getY() + enemy.getVelY();
-            Rectangle eBoundsV = new Rectangle((int) enemy.getX() + 2, (int) nextY, enemy.getWidth() - 4, enemy.getHeight());
+            int scanHeight = enemy.getHeight() + Math.max(2, (int) Math.ceil(Math.max(0, enemy.getVelY())));
+            Rectangle eBoundsV = new Rectangle((int) enemy.getX() + 4, (int) Math.min(enemy.getY(), nextY), enemy.getWidth() - 8, scanHeight);
             boolean landed = false;
 
             for (Tile tile : level.getTiles()) {
@@ -335,6 +336,25 @@ public class CollisionManager {
                 enemy.setY(nextY);
             }
 
+            // Enemy Ground Sensor (Prevents 1-frame ground flicker)
+            if (enemy.getVelY() >= 0 && !enemy.isOnGround()) {
+                Rectangle feetSensor = new Rectangle((int) enemy.getX() + 4, (int) (enemy.getY() + enemy.getHeight()), enemy.getWidth() - 8, 3);
+                for (Tile tile : level.getTiles()) {
+                    if (tile.isSolid() && feetSensor.intersects(tile.getBounds())) {
+                        enemy.setOnGround(true);
+                        break;
+                    }
+                }
+                if (!enemy.isOnGround()) {
+                    for (Block block : level.getBlocks()) {
+                        if (block.isActive() && !block.isDestroyed() && feetSensor.intersects(block.getBounds())) {
+                            enemy.setOnGround(true);
+                            break;
+                        }
+                    }
+                }
+            }
+
             // 3. Moving Shell Collisions
             boolean isShellMoving = false;
             if (enemy instanceof KoopaTroopa && ((KoopaTroopa) enemy).isShell() && ((KoopaTroopa) enemy).isMovingShell()) {
@@ -350,6 +370,28 @@ public class CollisionManager {
                     if (other.isActive() && enemy.getBounds().intersects(other.getBounds())) {
                         other.onHitByShell();
                         SoundManager.getInstance().playSound("shell-hit");
+                    }
+                }
+            } else {
+                // 4. Enemy vs Enemy Collision (Walking enemies bounce off each other smoothly)
+                for (int j = i + 1; j < enemies.size(); j++) {
+                    Enemy other = enemies.get(j);
+                    if (!other.isActive() || other.isSquished() || other instanceof PiranhaPlant) continue;
+
+                    boolean otherShell = (other instanceof KoopaTroopa && ((KoopaTroopa) other).isMovingShell())
+                            || (other instanceof RedKoopa && ((RedKoopa) other).isMovingShell());
+                    if (otherShell) continue;
+
+                    if (enemy.getBounds().intersects(other.getBounds())) {
+                        if (enemy.getX() < other.getX()) {
+                            enemy.setX(other.getX() - enemy.getWidth() - 1);
+                            if (enemy.getVelX() > 0) enemy.reverseDirection();
+                            if (other.getVelX() < 0) other.reverseDirection();
+                        } else {
+                            enemy.setX(other.getX() + other.getWidth() + 1);
+                            if (enemy.getVelX() < 0) enemy.reverseDirection();
+                            if (other.getVelX() > 0) other.reverseDirection();
+                        }
                     }
                 }
             }
