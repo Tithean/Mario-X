@@ -35,18 +35,19 @@ public class InputHandler extends KeyAdapter {
     }
 
     /**
-     * Returns true if Space or Z was just pressed (gameplay jump).
-     * Does NOT consume VK_UP/VK_W so arrow key menu navigation still works.
+     * Returns true if Space, Z, W, or UP was just pressed (gameplay jump).
      */
     public boolean isJumpJustPressed() {
         boolean pressed = false;
         if (justPressedKeys.contains(KeyEvent.VK_SPACE)) { justPressedKeys.remove(KeyEvent.VK_SPACE); pressed = true; }
         if (justPressedKeys.contains(KeyEvent.VK_Z)) { justPressedKeys.remove(KeyEvent.VK_Z); pressed = true; }
+        if (justPressedKeys.contains(KeyEvent.VK_W)) { justPressedKeys.remove(KeyEvent.VK_W); pressed = true; }
+        if (justPressedKeys.contains(KeyEvent.VK_UP)) { justPressedKeys.remove(KeyEvent.VK_UP); pressed = true; }
         return pressed;
     }
 
     public boolean isCrouch() {
-        return isKeyDown(KeyEvent.VK_DOWN) || isKeyDown(KeyEvent.VK_S);
+        return isKeyDown(KeyEvent.VK_DOWN);
     }
 
     public boolean isRunOrFire() {
@@ -78,6 +79,9 @@ public class InputHandler extends KeyAdapter {
     @Override
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
+        if (code == KeyEvent.VK_S) {
+            return; // Key 'S' is disabled
+        }
         if (!activeKeys.contains(code)) {
             activeKeys.add(code);
             justPressedKeys.add(code);
@@ -87,6 +91,9 @@ public class InputHandler extends KeyAdapter {
     @Override
     public void keyReleased(KeyEvent e) {
         int code = e.getKeyCode();
+        if (code == KeyEvent.VK_S) {
+            return; // Key 'S' is disabled
+        }
         activeKeys.remove(code);
         justPressedKeys.remove(code);
     }

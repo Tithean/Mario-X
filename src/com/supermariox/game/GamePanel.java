@@ -16,6 +16,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -231,7 +232,7 @@ public class GamePanel extends JPanel {
                     gameUI.navigateMenuUp();
                     SoundManager.getInstance().playSound("level-select");
                 }
-                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
+                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN)) {
                     gameUI.navigateMenuDown();
                     SoundManager.getInstance().playSound("level-select");
                 }
@@ -294,7 +295,7 @@ public class GamePanel extends JPanel {
                         gameUI.navigateOptionsUp();
                         SoundManager.getInstance().playSound("level-select");
                     }
-                    if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
+                    if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN)) {
                         gameUI.navigateOptionsDown();
                         SoundManager.getInstance().playSound("level-select");
                     }
@@ -314,7 +315,7 @@ public class GamePanel extends JPanel {
                     gameUI.navigatePauseUp();
                     SoundManager.getInstance().playSound("level-select");
                 }
-                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
+                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN)) {
                     gameUI.navigatePauseDown();
                     SoundManager.getInstance().playSound("level-select");
                 }
@@ -341,7 +342,7 @@ public class GamePanel extends JPanel {
                     gameUI.navigateGameOverUp();
                     SoundManager.getInstance().playSound("level-select");
                 }
-                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
+                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN)) {
                     gameUI.navigateGameOverDown();
                     SoundManager.getInstance().playSound("level-select");
                 }
@@ -363,7 +364,7 @@ public class GamePanel extends JPanel {
                     gameUI.navigateVictoryUp();
                     SoundManager.getInstance().playSound("level-select");
                 }
-                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN) || inputHandler.isKeyJustPressed(KeyEvent.VK_S)) {
+                if (inputHandler.isKeyJustPressed(KeyEvent.VK_DOWN)) {
                     gameUI.navigateVictoryDown();
                     SoundManager.getInstance().playSound("level-select");
                 }
@@ -495,6 +496,7 @@ public class GamePanel extends JPanel {
         renderToGraphics(g2d);
 
         g2d.setTransform(oldTx);
+        Toolkit.getDefaultToolkit().sync();
         g2d.dispose();
     }
 

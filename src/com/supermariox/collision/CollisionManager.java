@@ -24,40 +24,38 @@ public class CollisionManager {
             return;
         }
 
-        // 1. Player vs Tiles (Ground, Walls, Pipes)
-        checkPlayerTiles(player, level);
+        // 1. Player vs Terrain (Tiles & Blocks unified)
+        checkPlayerTerrain(player, level);
 
-        // 2. Player vs Blocks (Bricks, Question blocks)
-        checkPlayerBlocks(player, level);
-
-        // 3. Player vs Items (Coins, Mushrooms, 1-Ups)
+        // 2. Player vs Items (Coins, Mushrooms, 1-Ups)
         checkPlayerItems(player, level);
 
-        // 4. Player vs Enemies (Goombas, Koopas, Piranhas)
+        // 3. Player vs Enemies (Goombas, Koopas, Piranhas)
         checkPlayerEnemies(player, level);
 
-        // 5. Enemies vs Level Terrain & Moving Shells
+        // 4. Enemies vs Level Terrain & Moving Shells
         checkEnemyLevel(level);
 
-        // 6. Items vs Terrain
+        // 5. Items vs Terrain
         checkItemLevel(level);
 
-        // 7. Player vs Goal (Flagpole)
+        // 6. Player vs Goal (Flagpole)
         checkPlayerGoal(player, level);
 
-        // 8. Pit Death Check
+        // 7. Pit Death Check
         if (player.getY() > level.getHeight() + 100) {
             player.die();
         }
     }
 
-    private static void checkPlayerTiles(Player player, Level level) {
+    private static void checkPlayerTerrain(Player player, Level level) {
         player.setOnGround(false);
 
         // 1. Horizontal Collision Check (Inset top & bottom by 3px to avoid catching ground seams)
         float nextX = player.getX() + player.getVelX();
         Rectangle pBoundsH = new Rectangle((int) nextX, (int) (player.getY() + 3), player.getWidth(), player.getHeight() - 6);
 
+        // Check horizontal tiles
         for (Tile tile : level.getTiles()) {
             if (tile.isSolid() && pBoundsH.intersects(tile.getBounds())) {
                 if (player.getVelX() > 0) {
@@ -69,6 +67,24 @@ public class CollisionManager {
                 break;
             }
         }
+
+        // Check horizontal blocks if not stopped by tile
+        if (player.getVelX() != 0) {
+            for (Block block : level.getBlocks()) {
+                if (!block.isActive() || block.isDestroyed()) continue;
+                Rectangle bBounds = block.getBounds();
+                if (pBoundsH.intersects(bBounds)) {
+                    if (player.getVelX() > 0) {
+                        player.setX(block.getX() - player.getWidth());
+                    } else if (player.getVelX() < 0) {
+                        player.setX(block.getX() + block.getWidth());
+                    }
+                    player.setVelX(0);
+                    break;
+                }
+            }
+        }
+
         if (player.getVelX() != 0) {
             player.setX(nextX);
         }
@@ -76,25 +92,77 @@ public class CollisionManager {
         // 2. Vertical Collision Check
         float nextY = player.getY() + player.getVelY();
         Rectangle pBoundsV = new Rectangle((int) player.getX() + 2, (int) nextY, player.getWidth() - 4, player.getHeight());
+        boolean verticalCollided = false;
 
+        // Check vertical tiles
         for (Tile tile : level.getTiles()) {
             if (tile.isSolid() && pBoundsV.intersects(tile.getBounds())) {
                 if (player.getVelY() > 0) { // Landing on top of tile
                     player.setY(tile.getY() - player.getHeight());
                     player.setVelY(0);
                     player.setOnGround(true);
+                    verticalCollided = true;
                 } else if (player.getVelY() < 0) { // Hitting head on ceiling tile
                     player.setY(tile.getY() + tile.getHeight());
                     player.setVelY(0);
+                    verticalCollided = true;
                 }
                 break;
             }
         }
-        if (player.getVelY() != 0 && !player.isOnGround()) {
+
+        // Check vertical blocks if not resolved by tile
+        if (!verticalCollided) {
+            for (Block block : level.getBlocks()) {
+                if (!block.isActive() || block.isDestroyed()) continue;
+
+                Rectangle bBounds = block.getBounds();
+                if (pBoundsV.intersects(bBounds)) {
+                    float playerTop = nextY;
+                    float playerBottom = nextY + player.getHeight();
+                    float blockBottom = block.getY() + block.getHeight();
+                    float blockTop = block.getY();
+
+                    // Hitting block from below
+                    if (player.getVelY() < 0 && playerTop <= blockBottom && playerTop >= blockTop - 16) {
+                        player.setY(blockBottom);
+                        player.setVelY(0);
+                        verticalCollided = true;
+
+                        Block.BlockType prevType = block.getType();
+                        boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SMALL);
+
+                        if (destroyed) {
+                            SoundManager.getInstance().playSound("block-smash");
+                        } else if (prevType == Block.BlockType.QUESTION_COIN) {
+                            player.addCoins(1);
+                            SoundManager.getInstance().playSound("coin");
+                        } else if (prevType == Block.BlockType.QUESTION_MUSHROOM) {
+                            level.addItem(new Item(block.getX(), block.getY(), Item.ItemType.MUSHROOM));
+                            SoundManager.getInstance().playSound("mushroom");
+                        } else {
+                            SoundManager.getInstance().playSound("block-hit");
+                        }
+                        break;
+                    }
+                    // Landing on top of block
+                    else if (player.getVelY() >= 0 && playerBottom >= blockTop && playerBottom <= blockTop + 16) {
+                        player.setY(blockTop - player.getHeight());
+                        player.setVelY(0);
+                        player.setOnGround(true);
+                        verticalCollided = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Apply vertical movement if not landed or bonked
+        if (!verticalCollided && player.getVelY() != 0) {
             player.setY(nextY);
         }
 
-        // 3. Ground Sensor Check (Prevents 1-frame ground flicker on adjacent tiles)
+        // 3. Ground Sensor Check (Prevents 1-frame ground flicker on adjacent tiles & blocks)
         if (player.getVelY() >= 0) {
             Rectangle feetSensor = new Rectangle((int) player.getX() + 2, (int) (player.getY() + player.getHeight()), player.getWidth() - 4, 3);
             for (Tile tile : level.getTiles()) {
@@ -103,70 +171,12 @@ public class CollisionManager {
                     break;
                 }
             }
-        }
-    }
-
-    private static void checkPlayerBlocks(Player player, Level level) {
-        // 1. Horizontal block collision
-        Rectangle pBoundsH = new Rectangle((int) (player.getX() + player.getVelX()), (int) (player.getY() + 4), player.getWidth(), player.getHeight() - 8);
-        for (Block block : level.getBlocks()) {
-            if (!block.isActive() || block.isDestroyed()) continue;
-            Rectangle bBounds = block.getBounds();
-            if (pBoundsH.intersects(bBounds)) {
-                if (player.getVelX() > 0) {
-                    player.setX(block.getX() - player.getWidth());
-                    player.setVelX(0);
-                } else if (player.getVelX() < 0) {
-                    player.setX(block.getX() + block.getWidth());
-                    player.setVelX(0);
-                }
-            }
-        }
-
-        // 2. Vertical block collision
-        Rectangle pBounds = player.getBounds();
-        for (Block block : level.getBlocks()) {
-            if (!block.isActive() || block.isDestroyed()) continue;
-
-            Rectangle bBounds = block.getBounds();
-            if (pBounds.intersects(bBounds)) {
-                float playerBottom = player.getY() + player.getHeight();
-                float playerTop = player.getY();
-                float blockBottom = block.getY() + block.getHeight();
-                float blockTop = block.getY();
-
-                // Hitting block from below
-                if (player.getVelY() < 0 && playerTop <= blockBottom && playerTop >= blockTop - 12) {
-                    player.setY(blockBottom);
-                    player.setVelY(0);
-                    Block.BlockType prevType = block.getType();
-                    boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SMALL);
-
-                    if (destroyed) {
-                        SoundManager.getInstance().playSound("block-smash");
-                    } else if (prevType == Block.BlockType.QUESTION_COIN) {
-                        player.addCoins(1);
-                        SoundManager.getInstance().playSound("coin");
-                    } else if (prevType == Block.BlockType.QUESTION_MUSHROOM) {
-                        level.addItem(new Item(block.getX(), block.getY(), Item.ItemType.MUSHROOM));
-                        SoundManager.getInstance().playSound("mushroom");
-                    } else {
-                        SoundManager.getInstance().playSound("block-hit");
+            if (!player.isOnGround()) {
+                for (Block block : level.getBlocks()) {
+                    if (block.isActive() && !block.isDestroyed() && feetSensor.intersects(block.getBounds())) {
+                        player.setOnGround(true);
+                        break;
                     }
-                }
-                // Landing on top of block
-                else if (player.getVelY() >= 0 && playerBottom >= blockTop && playerBottom <= blockTop + 16) {
-                    player.setY(blockTop - player.getHeight());
-                    player.setVelY(0);
-                    player.setOnGround(true);
-                }
-            }
-
-            // Feet sensor for blocks
-            if (player.getVelY() >= 0) {
-                Rectangle feetSensor = new Rectangle((int) player.getX() + 2, (int) (player.getY() + player.getHeight()), player.getWidth() - 4, 3);
-                if (feetSensor.intersects(bBounds)) {
-                    player.setOnGround(true);
                 }
             }
         }

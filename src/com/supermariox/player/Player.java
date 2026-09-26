@@ -21,7 +21,7 @@ public class Player extends Entity {
     private static final float MAX_RUN_SPEED = 6.5f;
     private static final float FRICTION = 0.82f;
     private static final float GRAVITY = 0.45f;
-    private static final float JUMP_FORCE = -9.8f;
+    private static final float JUMP_FORCE = -11.2f; // Increased jump height to allow clearing obstacles and jumping onto high blocks
     private static final float MAX_FALL_SPEED = 10.5f;
 
     // Jump buffer & coyote time
@@ -168,7 +168,13 @@ public class Player extends Entity {
 
         // Crouch
         if (input.isCrouch() && onGround) {
-            currentState = PlayerState.CROUCHING;
+            if (currentState != PlayerState.CROUCHING) {
+                y += (54 - 36);
+                currentState = PlayerState.CROUCHING;
+            }
+        } else if (currentState == PlayerState.CROUCHING) {
+            y -= (54 - 36);
+            currentState = PlayerState.IDLE;
         }
     }
 
@@ -226,13 +232,15 @@ public class Player extends Entity {
             } else {
                 currentState = PlayerState.FALLING;
             }
+        } else if (currentState == PlayerState.CROUCHING) {
+            // Stay in crouching state while crouch is active
         } else if (Math.abs(velX) > 0.3f) {
             if ((velX > 0 && !facingRight) || (velX < 0 && facingRight)) {
                 currentState = PlayerState.SKIDDING;
             } else {
                 currentState = PlayerState.RUNNING;
             }
-        } else if (currentState != PlayerState.CROUCHING) {
+        } else {
             currentState = PlayerState.IDLE;
         }
 
@@ -252,9 +260,10 @@ public class Player extends Entity {
         int renderX = (int) (x - camera.getX());
         int renderY = (int) (y - camera.getY());
 
-        // Flash during invulnerability
+        java.awt.Composite origComposite = g.getComposite();
+        // Smooth semi-transparent blink during invulnerability so player never disappears
         if (invulnerable && (invulnerableTimer / 4) % 2 == 0) {
-            return;
+            g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.4f));
         }
 
         Animation anim = getCurrentAnimation();
@@ -265,6 +274,8 @@ public class Player extends Entity {
             g.setColor(Color.RED);
             g.fillRect(renderX, renderY, width, height);
         }
+
+        g.setComposite(origComposite);
     }
 
     private Animation getCurrentAnimation() {

@@ -50,28 +50,28 @@ public class LevelLoader {
         }
 
         // Pipes with Piranha Plants!
-        addPipe(level, 440, groundY, 2, pipeTopImg, pipeBodyImg);
+        addPipe(level, 520, groundY, 2, pipeTopImg, pipeBodyImg);
         addPipe(level, 700, groundY, 3, pipeTopImg, pipeBodyImg);
         level.addEnemy(new PiranhaPlant(708, groundY - (3 * tileSize))); // Piranha Plant in pipe 2
 
-        addPipe(level, 1200, groundY, 4, pipeTopImg, pipeBodyImg);
-        level.addEnemy(new PiranhaPlant(1208, groundY - (4 * tileSize))); // Piranha Plant in pipe 3
+        addPipe(level, 1200, groundY, 3, pipeTopImg, pipeBodyImg);
+        level.addEnemy(new PiranhaPlant(1208, groundY - (3 * tileSize))); // Piranha Plant in pipe 3
 
         addPipe(level, 1600, groundY, 2, pipeTopImg, pipeBodyImg);
 
-        // Blocks
-        level.addBlock(new Block(300, groundY - 128, Block.BlockType.QUESTION_COIN));
-        level.addBlock(new Block(360, groundY - 128, Block.BlockType.BRICK));
-        level.addBlock(new Block(392, groundY - 128, Block.BlockType.QUESTION_MUSHROOM));
-        level.addBlock(new Block(424, groundY - 128, Block.BlockType.BRICK));
-        level.addBlock(new Block(456, groundY - 128, Block.BlockType.QUESTION_COIN));
+        // Blocks - tuned to standard 3-tile height so Mario can comfortably jump on top and jump skip
+        level.addBlock(new Block(300, groundY - 96, Block.BlockType.QUESTION_COIN));
+        level.addBlock(new Block(360, groundY - 96, Block.BlockType.BRICK));
+        level.addBlock(new Block(392, groundY - 96, Block.BlockType.QUESTION_MUSHROOM));
+        level.addBlock(new Block(424, groundY - 96, Block.BlockType.BRICK));
+        level.addBlock(new Block(456, groundY - 96, Block.BlockType.QUESTION_COIN));
 
         // Floating Brick Row
         for (int bx = 950; bx <= 1100; bx += 32) {
             if (bx == 1014) {
-                level.addBlock(new Block(bx, groundY - 128, Block.BlockType.QUESTION_MUSHROOM));
+                level.addBlock(new Block(bx, groundY - 96, Block.BlockType.QUESTION_MUSHROOM));
             } else {
-                level.addBlock(new Block(bx, groundY - 128, Block.BlockType.BRICK));
+                level.addBlock(new Block(bx, groundY - 96, Block.BlockType.BRICK));
             }
         }
 
@@ -79,8 +79,8 @@ public class LevelLoader {
         buildPyramid(level, 3000, groundY, 5, groundImg);
 
         // Rich Variety of Enemies (Goombas, Green Koopas, Red Koopas)
-        level.addEnemy(new Goomba(400, groundY - 32));
-        level.addEnemy(new Goomba(520, groundY - 32));
+        level.addEnemy(new Goomba(380, groundY - 32));
+        level.addEnemy(new Goomba(480, groundY - 32));
         level.addEnemy(new RedKoopa(750, groundY - 44));
         level.addEnemy(new Goomba(1020, groundY - 32));
         level.addEnemy(new Goomba(1060, groundY - 32));
@@ -91,9 +91,9 @@ public class LevelLoader {
         level.addEnemy(new RedKoopa(2650, groundY - 44));
 
         // Coins
-        level.addItem(new Item(550, groundY - 64, Item.ItemType.COIN));
-        level.addItem(new Item(582, groundY - 64, Item.ItemType.COIN));
-        level.addItem(new Item(614, groundY - 64, Item.ItemType.COIN));
+        level.addItem(new Item(600, groundY - 64, Item.ItemType.COIN));
+        level.addItem(new Item(632, groundY - 64, Item.ItemType.COIN));
+        level.addItem(new Item(664, groundY - 64, Item.ItemType.COIN));
 
         level.setSpawnX(64);
         level.setSpawnY(groundY - 64);
@@ -136,9 +136,9 @@ public class LevelLoader {
 
         // Subterranean Platforms & Blocks
         for (int bx = 400; bx <= 600; bx += 32) {
-            level.addBlock(new Block(bx, groundY - 128, Block.BlockType.BRICK));
+            level.addBlock(new Block(bx, groundY - 96, Block.BlockType.BRICK));
         }
-        level.addBlock(new Block(500, groundY - 224, Block.BlockType.QUESTION_MUSHROOM));
+        level.addBlock(new Block(500, groundY - 192, Block.BlockType.QUESTION_MUSHROOM));
 
         // Coin vault
         for (int cx = 1300; cx <= 1500; cx += 32) {
@@ -149,8 +149,8 @@ public class LevelLoader {
         addPipe(level, 800, groundY, 3, pipeTopImg, pipeBodyImg);
         level.addEnemy(new PiranhaPlant(808, groundY - (3 * tileSize)));
 
-        addPipe(level, 1800, groundY, 4, pipeTopImg, pipeBodyImg);
-        level.addEnemy(new PiranhaPlant(1808, groundY - (4 * tileSize)));
+        addPipe(level, 1800, groundY, 3, pipeTopImg, pipeBodyImg);
+        level.addEnemy(new PiranhaPlant(1808, groundY - (3 * tileSize)));
 
         // Enemies
         level.addEnemy(new Goomba(450, groundY - 32));
