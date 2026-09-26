@@ -58,8 +58,10 @@ public class GamePanel extends JPanel {
                 requestFocusInWindow();
                 if (gameState == GameState.MENU) {
                     handleMenuSelect();
-                } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
-                    nextLevel();
+                } else if (gameState == GameState.GAME_OVER) {
+                    handleGameOverSelect();
+                } else if (gameState == GameState.VICTORY) {
+                    handleVictorySelect();
                 }
             }
         });
@@ -103,7 +105,7 @@ public class GamePanel extends JPanel {
         this.deathDelayTimer = 0;
         currentLevel = LevelLoader.createLevel(levelIndex);
 
-        int prevLives = (player != null) ? player.getLives() : 3;
+        int prevLives = (player != null && player.getLives() > 0) ? player.getLives() : 3;
         int prevScore = (player != null) ? player.getScore() : 0;
         int prevCoins = (player != null) ? player.getCoins() : 0;
 
@@ -119,6 +121,26 @@ public class GamePanel extends JPanel {
         if (gameState == GameState.PLAYING) {
             SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
         }
+    }
+
+    public void retryCurrentLevel() {
+        this.deathDelayTimer = 0;
+        currentLevel = LevelLoader.createLevel(currentLevelIndex);
+
+        int prevScore = (player != null) ? player.getScore() : 0;
+        int prevCoins = (player != null) ? player.getCoins() : 0;
+
+        player = new Player(currentLevel.getSpawnX(), currentLevel.getSpawnY());
+        player.setLives(3); // Reset to 3 lives on retry
+        player.setScore(prevScore);
+        player.setCoins(prevCoins);
+
+        camera.setBounds(0, 0, currentLevel.getWidth(), currentLevel.getHeight());
+        gameUI.resetTime();
+        gameUI.setLevelName(currentLevel.getName());
+        gameState = GameState.PLAYING;
+
+        SoundManager.getInstance().playMusic(currentLevel.getMusicTrack());
     }
 
     public void nextLevel() {
@@ -221,8 +243,7 @@ public class GamePanel extends JPanel {
         // Handle Restart (R key)
         if (inputHandler.isRestartJustPressed()) {
             SoundManager.getInstance().playSound("coin");
-            initGame(currentLevelIndex);
-            gameState = GameState.PLAYING;
+            retryCurrentLevel();
             return;
         }
 
@@ -328,8 +349,7 @@ public class GamePanel extends JPanel {
                     } else if (pSel == 1) { // AUDIO & SETTINGS
                         gameUI.setInPauseOptions(true);
                     } else if (pSel == 2) { // RESTART
-                        initGame(currentLevelIndex);
-                        gameState = GameState.PLAYING;
+                        retryCurrentLevel();
                     } else if (pSel == 3) { // MAIN MENU
                         returnToHomeScreen();
                     }
@@ -347,14 +367,7 @@ public class GamePanel extends JPanel {
                     SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
-                    SoundManager.getInstance().playSound("coin");
-                    int goSel = gameUI.getGameOverMenuIndex();
-                    if (goSel == 0) { // RETRY
-                        startNewGame();
-                        gameState = GameState.PLAYING;
-                    } else if (goSel == 1) { // MAIN MENU
-                        returnToHomeScreen();
-                    }
+                    handleGameOverSelect();
                 }
                 break;
 
@@ -369,18 +382,31 @@ public class GamePanel extends JPanel {
                     SoundManager.getInstance().playSound("level-select");
                 }
                 if (inputHandler.isStartJustPressed() || inputHandler.isJumpJustPressed()) {
-                    SoundManager.getInstance().playSound("coin");
-                    int vicSel = gameUI.getVictoryMenuIndex();
-                    if (vicSel == 0) { // NEXT LEVEL
-                        nextLevel();
-                    } else if (vicSel == 1) { // REPLAY
-                        initGame(currentLevelIndex);
-                        gameState = GameState.PLAYING;
-                    } else if (vicSel == 2) { // MAIN MENU
-                        returnToHomeScreen();
-                    }
+                    handleVictorySelect();
                 }
                 break;
+        }
+    }
+
+    private void handleGameOverSelect() {
+        SoundManager.getInstance().playSound("coin");
+        int goSel = gameUI.getGameOverMenuIndex();
+        if (goSel == 0) { // RETRY
+            retryCurrentLevel();
+        } else if (goSel == 1) { // MAIN MENU
+            returnToHomeScreen();
+        }
+    }
+
+    private void handleVictorySelect() {
+        SoundManager.getInstance().playSound("coin");
+        int vicSel = gameUI.getVictoryMenuIndex();
+        if (vicSel == 0) { // NEXT LEVEL
+            nextLevel();
+        } else if (vicSel == 1) { // REPLAY
+            retryCurrentLevel();
+        } else if (vicSel == 2) { // MAIN MENU
+            returnToHomeScreen();
         }
     }
 
