@@ -25,7 +25,6 @@ public class Player extends Entity {
     private static final float JUMP_FORCE = -9.8f;
     private static final float MAX_FALL_SPEED = 10.5f;
 
-    // Jump buffer & coyote time
     private int jumpBufferTimer = 0;
     private int coyoteTimer = 0;
     private int maxJumps = 2; // Double jump
@@ -43,7 +42,6 @@ public class Player extends Entity {
     private boolean invulnerable = false;
     private int invulnerableTimer = 0;
 
-    // Animations map: Key = Power + "_" + State + "_" + (facingRight ? "R" : "L")
     private final Map<String, Animation> animations = new HashMap<>();
 
     public Player(float x, float y) {
@@ -53,7 +51,7 @@ public class Player extends Entity {
 
     private void loadAnimations() {
         AssetManager am = AssetManager.getInstance();
-        loadPowerAnimations(am, "mario.gif", PlayerPower.NORMAL);
+        loadPowerAnimations(am, "chantim.gif", PlayerPower.NORMAL);
     }
 
     private void loadPowerAnimations(AssetManager am, String sheetName, PlayerPower power) {
@@ -63,15 +61,13 @@ public class Player extends Entity {
         BufferedImage idleFrame, run1, run2, run3, jumpFrame, skidFrame, crouchFrame, deadFrame;
 
         if (sheetImg.getWidth() <= 600 && sheetImg.getHeight() <= 300) {
-            // New mario.gif: 3 horizontal frames (e.g. 540x220, 180px each)
-            // Frame 0: Idle/stand, Frame 1: Step 1, Frame 2: Step 2
             int frameW = sheetImg.getWidth() / 3;
             int frameH = sheetImg.getHeight();
 
             idleFrame   = autoCrop(sheetImg.getSubimage(0, 0, frameW, frameH));
             run1        = autoCrop(sheetImg.getSubimage(frameW, 0, frameW, frameH));
             run2        = autoCrop(sheetImg.getSubimage(frameW * 2, 0, frameW, frameH));
-            run3        = null; // Use 4-frame cycle (run1 -> idle -> run2 -> idle)
+            run3        = null;
             jumpFrame   = run1;
             skidFrame   = idleFrame;
             crouchFrame = idleFrame;
@@ -79,8 +75,6 @@ public class Player extends Entity {
         } else {
             SpriteSheet sheet = new SpriteSheet(sheetImg);
             BufferedImage[][] grid = sheet.getGridFrames(10, 10, 100, 100);
-
-            // Verified frame map for 10x10 grid sheets (mario-2.gif)
             idleFrame   = autoCrop(grid[0][5]);
             run1        = autoCrop(grid[0][4]);
             run2        = autoCrop(grid[1][4]);
@@ -112,7 +106,6 @@ public class Player extends Entity {
                     Animation.flipHorizontally(run3)
             };
         } else {
-            // Fluid 4-phase stride: Step 1 -> Pass -> Step 2 -> Pass
             runRightFrames = new BufferedImage[]{run1, idleFrame, run2, idleFrame};
             runLeftFrames = new BufferedImage[]{
                     Animation.flipHorizontally(run1),
@@ -211,18 +204,18 @@ public class Player extends Entity {
             coyoteTimer--;
         }
 
-        // Execute First Jump (Ground / Coyote)
+        // Execute First Jump
         if (jumpBufferTimer > 0 && coyoteTimer > 0) {
             velY = JUMP_FORCE;
             SoundManager.getInstance().playSound(PlayerSoundEffects.JUMP);
             onGround = false;
             coyoteTimer = 0;
             jumpBufferTimer = 0;
-            jumpsRemaining = maxJumps - 1; // Used one jump
+            jumpsRemaining = maxJumps - 1;
         }
-        // Execute Double Jump (in air, still has a jump left)
+        // Execute Double Jump
         else if (jumpBufferTimer > 0 && jumpsRemaining > 0 && !onGround && coyoteTimer == 0) {
-            velY = JUMP_FORCE * 0.92f; // Slightly smaller double jump
+            velY = JUMP_FORCE * 0.92f;
             SoundManager.getInstance().playSound(PlayerSoundEffects.JUMP);
             jumpBufferTimer = 0;
             jumpsRemaining--;

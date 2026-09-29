@@ -25,25 +25,25 @@ public class CollisionManager {
             return;
         }
 
-        // 1. Player vs Tiles (Ground, Walls, Pipes)
+        // 1. Player vs Tiles
         checkPlayerTiles(player, level);
 
-        // 2. Player vs Blocks (Bricks, Question blocks)
+        // 2. Player vs Blocks
         checkPlayerBlocks(player, level);
 
-        // 3. Player vs Items (Coins, Mushrooms, 1-Ups)
+        // 3. Player vs Items
         checkPlayerItems(player, level);
 
-        // 4. Player vs Enemies (Goombas, Koopas, Piranhas)
+        // 4. Player vs Enemies
         checkPlayerEnemies(player, level);
 
-        // 5. Enemies vs Level Terrain & Moving Shells
+        // 5. Enemies vs Level Terrain
         checkEnemyLevel(level);
 
         // 6. Items vs Terrain
         checkItemLevel(level);
 
-        // 7. Player vs Goal (Flagpole)
+        // 7. Player vs Goal
         checkPlayerGoal(player, level);
 
         // 8. Pit Death Check

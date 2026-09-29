@@ -34,7 +34,6 @@ public abstract class Entity {
         return new Rectangle((int) (x + deltaX), (int) (y + deltaY), width, height);
     }
 
-    // Getters and Setters
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
 
