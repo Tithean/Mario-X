@@ -70,12 +70,7 @@ public class RedKoopa extends Enemy {
         if (velY > 10.0f) velY = 10.0f;
 
         if (isShell) {
-            // Tick down the settle cooldown
-            if (shellSettleTimer > 0) shellSettleTimer--;
-
-            if (movingShell && shellAnim != null) {
-                shellAnim.update();
-            }
+            velX = 0; // Shell stays completely still in place
         } else {
             // Guard against velX=0 stuck state for a walking RedKoopa
             if (velX == 0) {
@@ -124,11 +119,9 @@ public class RedKoopa extends Enemy {
         if (!isShell) {
             // 1st stomp: turn into a still shell — stays in place
             isShell = true;
-            movingShell = false;
             velX = 0;
             height = 32;
             y += 12;
-            shellSettleTimer = SHELL_SETTLE_FRAMES;
             player.addScore(100);
         } else {
             // 2nd stomp on shell: RedKoopa dies
@@ -137,21 +130,10 @@ public class RedKoopa extends Enemy {
         }
     }
 
-    public void kick(boolean fromLeft) {
-        isShell = true;
-        movingShell = true;
-        shellSettleTimer = 0;
-        velX = fromLeft ? SHELL_SPEED : -SHELL_SPEED;
-    }
-
     @Override
     public void onHitByShell() {
         active = false;
     }
 
     public boolean isShell() { return isShell; }
-    public boolean isMovingShell() { return movingShell; }
-
-    /** True while the shell is settling after a stomp — cannot be kicked yet. */
-    public boolean isSettling() { return shellSettleTimer > 0; }
 }

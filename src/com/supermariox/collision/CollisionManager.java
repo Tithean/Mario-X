@@ -141,7 +141,7 @@ public class CollisionManager {
                 if (player.getVelY() < 0 && playerTop <= blockBottom && playerTop >= blockTop - 12) {
                     player.setY(blockBottom);
                     player.setVelY(0);
-                    boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SMALL);
+                    boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SUPER);
                     SoundManager.getInstance().playSound(destroyed
                             ? EnvironmentSounds.BLOCK_SMASH
                             : EnvironmentSounds.BLOCK_HIT);
@@ -201,27 +201,7 @@ public class CollisionManager {
                     enemy.onStomped(player);
                     SoundManager.getInstance().playSound(EnemySounds.STOMPED);
                 } else {
-                    // Koopa shell kick — only allowed once the settle timer has expired
-                    // (prevents the shell from flying away the instant it's created)
-                    if (enemy instanceof KoopaTroopa) {
-                        KoopaTroopa koopa = (KoopaTroopa) enemy;
-                        if (koopa.isShell() && !koopa.isMovingShell() && !koopa.isSettling()) {
-                            koopa.kick(player.getX() < koopa.getX());
-                            SoundManager.getInstance().playSound(EnemySounds.SHELL_HIT);
-                            continue;
-                        } else if (koopa.isShell() && koopa.isSettling()) {
-                            continue; // Shell is still settling — ignore touch
-                        }
-                    } else if (enemy instanceof RedKoopa) {
-                        RedKoopa koopa = (RedKoopa) enemy;
-                        if (koopa.isShell() && !koopa.isMovingShell() && !koopa.isSettling()) {
-                            koopa.kick(player.getX() < koopa.getX());
-                            SoundManager.getInstance().playSound(EnemySounds.SHELL_HIT);
-                            continue;
-                        } else if (koopa.isShell() && koopa.isSettling()) {
-                            continue; // Shell is still settling — ignore touch
-                        }
-                    }
+                    // Touching enemy without stomping -> Player takes damage, enemy stays in place
                     player.takeDamage();
                 }
             }
@@ -290,7 +270,7 @@ public class CollisionManager {
             // Uses wasOnGround so it only fires when the enemy was grounded last
             // frame — avoids triggering in mid-air or on the first landing frame.
             // ----------------------------------------------------------------
-            boolean isWalkingEnemy = (enemy instanceof RedKoopa && !((RedKoopa) enemy).isMovingShell())
+            boolean isWalkingEnemy = (enemy instanceof RedKoopa && !((RedKoopa) enemy).isShell())
                                   || (enemy instanceof Goomba);
             if (isWalkingEnemy && wasOnGround) {
                 // Look one pixel ahead of the enemy's leading foot for a ground tile.
@@ -387,27 +367,6 @@ public class CollisionManager {
                     }
                 }
             }
-
-            // ----------------------------------------------------------------
-            // 3. Moving Shell vs Enemy Collisions
-            // ----------------------------------------------------------------
-            boolean isShellMoving = false;
-            if (enemy instanceof KoopaTroopa && ((KoopaTroopa) enemy).isShell() && ((KoopaTroopa) enemy).isMovingShell()) {
-                isShellMoving = true;
-            } else if (enemy instanceof RedKoopa && ((RedKoopa) enemy).isShell() && ((RedKoopa) enemy).isMovingShell()) {
-                isShellMoving = true;
-            }
-
-            if (isShellMoving) {
-                for (int j = 0; j < enemies.size(); j++) {
-                    if (i == j) continue;
-                    Enemy other = enemies.get(j);
-                    if (other.isActive() && enemy.getBounds().intersects(other.getBounds())) {
-                        other.onHitByShell();
-                    }
-                }
-            }
-
             // Pit death check for enemies
             if (enemy.getY() > level.getHeight() + 100) {
                 enemy.setActive(false);

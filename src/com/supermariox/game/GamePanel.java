@@ -82,16 +82,7 @@ public class GamePanel extends JPanel {
     }
 
     public void startNewGame() {
-        this.currentLevelIndex = 1;
-        this.deathDelayTimer = 0;
-        currentLevel = LevelLoader.createLevel(1);
-
-        player = new Player(currentLevel.getSpawnX(), currentLevel.getSpawnY());
-        player.setLives(3); // Start with 3 lives
-
-        camera.setBounds(0, 0, currentLevel.getWidth(), currentLevel.getHeight());
-        gameUI.resetTime();
-        gameUI.setLevelName(currentLevel.getName());
+        initGame(1);
     }
 
     public void initGame(int levelIndex) {
@@ -99,9 +90,27 @@ public class GamePanel extends JPanel {
         this.deathDelayTimer = 0;
         currentLevel = LevelLoader.createLevel(levelIndex);
 
+        // Completely reset player: full health bar (3 hearts), 0 score, 0 coins
+        player = new Player(currentLevel.getSpawnX(), currentLevel.getSpawnY());
+        player.setLives(3);
+        player.setScore(0);
+        player.setCoins(0);
+
+        camera.setBounds(0, 0, currentLevel.getWidth(), currentLevel.getHeight());
+        camera.update(player.getX() + player.getWidth() / 2.0f, player.getY() + player.getHeight() / 2.0f);
+        gameUI.resetTime();
+        gameUI.setLevelName(currentLevel.getName());
+    }
+
+    public void nextLevel() {
+        int nextIdx = (currentLevelIndex % 3) + 1;
         int prevLives = (player != null) ? player.getLives() : 3;
         int prevScore = (player != null) ? player.getScore() : 0;
         int prevCoins = (player != null) ? player.getCoins() : 0;
+
+        this.currentLevelIndex = nextIdx;
+        this.deathDelayTimer = 0;
+        currentLevel = LevelLoader.createLevel(nextIdx);
 
         player = new Player(currentLevel.getSpawnX(), currentLevel.getSpawnY());
         player.setLives(prevLives);
@@ -109,13 +118,10 @@ public class GamePanel extends JPanel {
         player.setCoins(prevCoins);
 
         camera.setBounds(0, 0, currentLevel.getWidth(), currentLevel.getHeight());
+        camera.update(player.getX() + player.getWidth() / 2.0f, player.getY() + player.getHeight() / 2.0f);
         gameUI.resetTime();
         gameUI.setLevelName(currentLevel.getName());
-    }
 
-    public void nextLevel() {
-        int nextIdx = (currentLevelIndex % 3) + 1;
-        initGame(nextIdx);
         gameState = GameState.PLAYING;
         playCurrentLevelMusic();
     }
