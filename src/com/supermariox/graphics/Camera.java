@@ -1,5 +1,6 @@
 package com.supermariox.graphics;
 
+// Manages the 2D scrolling viewport with smooth LERP tracking and level clamping
 public class Camera {
     private float x;
     private float y;
@@ -11,6 +12,7 @@ public class Camera {
     private float maxX = 10000;
     private float maxY = 1000;
 
+    // Linear interpolation speed factor (0.1 = 10% movement per frame)
     private float lerpSpeed = 0.1f;
 
     public Camera(int viewportWidth, int viewportHeight) {
@@ -20,12 +22,13 @@ public class Camera {
         this.y = 0;
     }
 
+    // Centers target on screen and glides smoothly within map bounds
     public void update(float targetX, float targetY) {
-        // Center viewport on target
+        // Center viewport on target (slightly lower on Y for jump visibility)
         float desiredX = targetX - (viewportWidth / 2.0f);
         float desiredY = targetY - (viewportHeight / 1.6f);
 
-        // Smooth camera movement
+        // Smooth camera movement using LERP
         x += (desiredX - x) * lerpSpeed;
         y += (desiredY - y) * lerpSpeed;
 

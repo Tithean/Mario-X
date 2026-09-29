@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+// Slices individual sprites and animation frames out of a single sheet
 public class SpriteSheet {
     private final BufferedImage sheet;
 
@@ -11,6 +12,7 @@ public class SpriteSheet {
         this.sheet = sheet;
     }
 
+    // Extracts a sub-rectangle with bounds checking
     public BufferedImage getSprite(int x, int y, int width, int height) {
         if (sheet == null) return null;
         if (x < 0 || y < 0 || x + width > sheet.getWidth() || y + height > sheet.getHeight()) {
@@ -19,6 +21,7 @@ public class SpriteSheet {
         return sheet.getSubimage(x, y, width, height);
     }
 
+    // Cuts vertically-stacked frames (e.g. Goomba walk cycle)
     public BufferedImage[] getVerticalFrames(int frameWidth, int frameHeight, int count) {
         if (sheet == null) return new BufferedImage[0];
         BufferedImage[] frames = new BufferedImage[count];
@@ -33,6 +36,7 @@ public class SpriteSheet {
         return frames;
     }
 
+    // Cuts horizontally-arranged frames (e.g. Mario run cycle)
     public BufferedImage[] getHorizontalFrames(int frameWidth, int frameHeight, int count) {
         if (sheet == null) return new BufferedImage[0];
         BufferedImage[] frames = new BufferedImage[count];
@@ -47,6 +51,7 @@ public class SpriteSheet {
         return frames;
     }
 
+    // Cuts 2D grid matrix of sprites (rows x cols)
     public BufferedImage[][] getGridFrames(int cols, int rows, int cellWidth, int cellHeight) {
         if (sheet == null) return new BufferedImage[0][0];
         BufferedImage[][] grid = new BufferedImage[rows][cols];

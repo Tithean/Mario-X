@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+// Central asset loader with memory caching and SMBX mask support
 public class AssetManager {
     private static AssetManager instance;
 
@@ -30,6 +31,7 @@ public class AssetManager {
         }
     }
 
+    // Singleton access
     public static synchronized AssetManager getInstance() {
         if (instance == null) {
             instance = new AssetManager();
@@ -37,6 +39,7 @@ public class AssetManager {
         return instance;
     }
 
+    // Retrieves cached image or loads from disk with fallback placeholder
     public BufferedImage getImage(String relativePath) {
         if (imageCache.containsKey(relativePath)) {
             return imageCache.get(relativePath);
@@ -53,6 +56,7 @@ public class AssetManager {
         return img;
     }
 
+    // Loads image and automatically applies paired transparency mask (e.g. .gif + m.gif)
     public BufferedImage loadImageWithMask(String relativePath) {
         File baseFile = new File(basePath + relativePath);
         if (!baseFile.exists()) {
@@ -100,6 +104,7 @@ public class AssetManager {
         }
     }
 
+    // Merges base image with SMBX mask (white = transparent, black = opaque)
     private BufferedImage applySMBXMask(BufferedImage base, BufferedImage mask) {
         int w = base.getWidth();
         int h = base.getHeight();
@@ -148,6 +153,7 @@ public class AssetManager {
         return argb;
     }
 
+    // Creates placeholder square to prevent null pointer crashes if an asset is missing
     public BufferedImage createPlaceholderImage(int width, int height, Color color) {
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
