@@ -30,24 +30,13 @@ public class InputHandler extends KeyAdapter {
     }
 
     public boolean isJumpHeld() {
-        return isKeyDown(KeyEvent.VK_SPACE) || isKeyDown(KeyEvent.VK_UP) ||
-               isKeyDown(KeyEvent.VK_W) || isKeyDown(KeyEvent.VK_Z);
+        return isKeyDown(KeyEvent.VK_SPACE) || isKeyDown(KeyEvent.VK_UP);
     }
-
-    /**
-     * Returns true if Space or Z was just pressed (gameplay jump).
-     * Does NOT consume VK_UP/VK_W so arrow key menu navigation still works.
-     */
     public boolean isJumpJustPressed() {
         boolean pressed = false;
         if (justPressedKeys.contains(KeyEvent.VK_SPACE)) { justPressedKeys.remove(KeyEvent.VK_SPACE); pressed = true; }
-        if (justPressedKeys.contains(KeyEvent.VK_Z)) { justPressedKeys.remove(KeyEvent.VK_Z); pressed = true; }
         return pressed;
     }
-
-//    public boolean isCrouch() {
-//        return isKeyDown(KeyEvent.VK_DOWN) || isKeyDown(KeyEvent.VK_S);
-//    }
 
     public boolean isRunOrFire() {
         return isKeyDown(KeyEvent.VK_SHIFT) || isKeyDown(KeyEvent.VK_X) || isKeyDown(KeyEvent.VK_J);
@@ -59,20 +48,11 @@ public class InputHandler extends KeyAdapter {
         if (justPressedKeys.contains(KeyEvent.VK_ESCAPE)) { justPressedKeys.remove(KeyEvent.VK_ESCAPE); pressed = true; }
         return pressed;
     }
-
-    /**
-     * Returns true if ENTER or SPACE was just pressed (menu confirm).
-     * Does NOT consume UP/W so those remain available for navigation.
-     */
     public boolean isStartJustPressed() {
         boolean pressed = false;
         if (justPressedKeys.contains(KeyEvent.VK_ENTER)) { justPressedKeys.remove(KeyEvent.VK_ENTER); pressed = true; }
         if (justPressedKeys.contains(KeyEvent.VK_SPACE)) { justPressedKeys.remove(KeyEvent.VK_SPACE); pressed = true; }
         return pressed;
-    }
-
-    public boolean isRestartJustPressed() {
-        return isKeyJustPressed(KeyEvent.VK_R);
     }
 
     @Override
@@ -89,10 +69,5 @@ public class InputHandler extends KeyAdapter {
         int code = e.getKeyCode();
         activeKeys.remove(code);
         justPressedKeys.remove(code);
-    }
-
-    public void clear() {
-        activeKeys.clear();
-        justPressedKeys.clear();
     }
 }

@@ -183,14 +183,6 @@ public class GamePanel extends JPanel {
             }
         }
 
-        // Handle Restart (R key)
-        if (inputHandler.isRestartJustPressed()) {
-            initGame(currentLevelIndex);
-            gameState = GameState.PLAYING;
-            playCurrentLevelMusic();
-            return;
-        }
-
         switch (gameState) {
             case MENU:
                 if (inputHandler.isKeyJustPressed(KeyEvent.VK_UP) || inputHandler.isKeyJustPressed(KeyEvent.VK_W)) {

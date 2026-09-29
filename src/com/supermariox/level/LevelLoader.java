@@ -4,9 +4,10 @@ import com.supermariox.audio.BackgroundMusic;
 import com.supermariox.enermy.Goomba;
 import com.supermariox.items.Item;
 import com.supermariox.enermy.KoopaTroopa;
-import com.supermariox.enermy.PiranhaPlant;
 import com.supermariox.enermy.RedKoopa;
 import com.supermariox.graphics.AssetManager;
+import com.supermariox.objects.Block;
+import com.supermariox.objects.Tile;
 
 import java.awt.image.BufferedImage;
 

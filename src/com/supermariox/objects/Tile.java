@@ -1,4 +1,4 @@
-package com.supermariox.level;
+package com.supermariox.objects;
 
 import com.supermariox.graphics.Camera;
 import java.awt.Graphics2D;

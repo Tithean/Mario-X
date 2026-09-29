@@ -34,7 +34,7 @@ public class Player extends Entity {
     private PlayerState currentState = PlayerState.IDLE;
     private PlayerState previousState = PlayerState.IDLE;
     private boolean previousFacingRight = true;
-    private PlayerPower currentPower = PlayerPower.SUPER; // Super Mario only
+    private PlayerPower currentPower = PlayerPower.NORMAL; // Super Mario only
 
     private int lives = 3;
     private int score = 0;
@@ -53,7 +53,7 @@ public class Player extends Entity {
 
     private void loadAnimations() {
         AssetManager am = AssetManager.getInstance();
-        loadPowerAnimations(am, "mario.gif", PlayerPower.SUPER);
+        loadPowerAnimations(am, "mario.gif", PlayerPower.NORMAL);
     }
 
     private void loadPowerAnimations(AssetManager am, String sheetName, PlayerPower power) {
@@ -184,20 +184,13 @@ public class Player extends Entity {
             if (Math.abs(velX) < 0.1f) velX = 0;
         }
 
-        // Jump Input Check (Buffer jump request if Space/Jump pressed or held)
         if (input.isJumpJustPressed()) {
             jumpBufferTimer = 10;
         }
 
-        // Variable Jump Cut (Releasing jump key early cuts upward velocity)
         if (!input.isJumpHeld() && velY < -3.2f) {
             velY = -3.2f;
         }
-
-        // Crouch
-//        if (input.isCrouch() && onGround) {
-//            currentState = PlayerState.CROUCHING;
-//        }
     }
 
     @Override
@@ -339,7 +332,7 @@ public class Player extends Entity {
         this.velY = 0;
         this.currentState = PlayerState.IDLE;
         this.previousState = PlayerState.IDLE;
-        this.currentPower = PlayerPower.SUPER;
+        this.currentPower = PlayerPower.NORMAL;
         this.width = 30;
         this.height = 54;
         this.jumpsRemaining = maxJumps;

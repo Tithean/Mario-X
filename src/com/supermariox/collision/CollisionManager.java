@@ -5,13 +5,12 @@ import com.supermariox.audio.EnvironmentSounds;
 import com.supermariox.audio.SoundManager;
 import com.supermariox.enermy.Enemy;
 import com.supermariox.enermy.Goomba;
-import com.supermariox.enermy.KoopaTroopa;
 import com.supermariox.enermy.PiranhaPlant;
 import com.supermariox.enermy.RedKoopa;
 import com.supermariox.items.Item;
-import com.supermariox.level.Block;
+import com.supermariox.objects.Block;
 import com.supermariox.level.Level;
-import com.supermariox.level.Tile;
+import com.supermariox.objects.Tile;
 import com.supermariox.player.Player;
 import com.supermariox.player.PlayerPower;
 import com.supermariox.player.PlayerState;
@@ -81,11 +80,11 @@ public class CollisionManager {
 
         for (Tile tile : level.getTiles()) {
             if (tile.isSolid() && pBoundsV.intersects(tile.getBounds())) {
-                if (player.getVelY() > 0) { // Landing on top of tile
+                if (player.getVelY() > 0) {
                     player.setY(tile.getY() - player.getHeight());
                     player.setVelY(0);
                     player.setOnGround(true);
-                } else if (player.getVelY() < 0) { // Hitting head on ceiling tile
+                } else if (player.getVelY() < 0) {
                     player.setY(tile.getY() + tile.getHeight());
                     player.setVelY(0);
                 }
@@ -141,7 +140,7 @@ public class CollisionManager {
                 if (player.getVelY() < 0 && playerTop <= blockBottom && playerTop >= blockTop - 12) {
                     player.setY(blockBottom);
                     player.setVelY(0);
-                    boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.SUPER);
+                    boolean destroyed = block.bump(player.getCurrentPower() != PlayerPower.NORMAL);
                     SoundManager.getInstance().playSound(destroyed
                             ? EnvironmentSounds.BLOCK_SMASH
                             : EnvironmentSounds.BLOCK_HIT);
@@ -187,7 +186,6 @@ public class CollisionManager {
 
             Rectangle eBounds = enemy.getBounds();
             if (pBounds.intersects(eBounds)) {
-                // Piranha Plant: damages player on touch
                 if (enemy instanceof PiranhaPlant) {
                     player.takeDamage();
                     continue;
@@ -213,20 +211,12 @@ public class CollisionManager {
 
         for (int i = 0; i < enemies.size(); i++) {
             Enemy enemy = enemies.get(i);
-            // Skip inactive, squished, or stationary pipe enemies
+
             if (!enemy.isActive() || enemy.isSquished() || enemy instanceof PiranhaPlant) continue;
 
-            // --- Reset ground flag at the very top of each enemy's physics step ---
-            // Capture wasOnGround BEFORE resetting, so the ledge-AI below can use
-            // last frame's ground state (avoids a 1-frame miss on the landing frame).
             boolean wasOnGround = enemy.isOnGround();
             enemy.setOnGround(false);
 
-            // ----------------------------------------------------------------
-            // 1. Horizontal Movement & Wall Collision
-            // Vertical inset is +2/-4 (tight) so the sensor catches walls at
-            // ground level without false-triggering on floor tile corners.
-            // ----------------------------------------------------------------
             float nextX = enemy.getX() + enemy.getVelX();
             Rectangle eBoundsH = new Rectangle(
                 (int) nextX,
@@ -265,15 +255,10 @@ public class CollisionManager {
                 enemy.setX(nextX);
             }
 
-            // ----------------------------------------------------------------
-            // Ledge-turnaround AI for walking enemies (Goomba & RedKoopa).
-            // Uses wasOnGround so it only fires when the enemy was grounded last
-            // frame — avoids triggering in mid-air or on the first landing frame.
-            // ----------------------------------------------------------------
             boolean isWalkingEnemy = (enemy instanceof RedKoopa && !((RedKoopa) enemy).isShell())
                                   || (enemy instanceof Goomba);
             if (isWalkingEnemy && wasOnGround) {
-                // Look one pixel ahead of the enemy's leading foot for a ground tile.
+
                 float checkEdgeX = enemy.getVelX() > 0
                         ? enemy.getX() + enemy.getWidth() + 2
                         : enemy.getX() - 2;
@@ -301,9 +286,6 @@ public class CollisionManager {
                 }
             }
 
-            // ----------------------------------------------------------------
-            // 2. Vertical Movement & Collision (gravity applied in enemy.update())
-            // ----------------------------------------------------------------
             float nextY = enemy.getY() + enemy.getVelY();
             Rectangle eBoundsV = new Rectangle(
                 (int) enemy.getX() + 2,
@@ -314,11 +296,11 @@ public class CollisionManager {
 
             for (Tile tile : level.getTiles()) {
                 if (tile.isSolid() && eBoundsV.intersects(tile.getBounds())) {
-                    if (enemy.getVelY() >= 0) { // Falling: snap to top surface of tile
+                    if (enemy.getVelY() >= 0) {
                         enemy.setY(tile.getY() - enemy.getHeight());
                         enemy.setVelY(0);
                         enemy.setOnGround(true);
-                    } else {                     // Rising: snap to underside of tile (ceiling)
+                    } else {
                         enemy.setY(tile.getY() + tile.getHeight());
                         enemy.setVelY(0);
                     }
@@ -329,11 +311,11 @@ public class CollisionManager {
             if (!landed) {
                 for (Block block : level.getBlocks()) {
                     if (block.isActive() && !block.isDestroyed() && eBoundsV.intersects(block.getBounds())) {
-                        if (enemy.getVelY() >= 0) { // Falling: snap to top of block
+                        if (enemy.getVelY() >= 0) {
                             enemy.setY(block.getY() - enemy.getHeight());
                             enemy.setVelY(0);
                             enemy.setOnGround(true);
-                        } else {                     // Rising: snap to underside of block
+                        } else {
                             enemy.setY(block.getY() + block.getHeight());
                             enemy.setVelY(0);
                         }
@@ -345,8 +327,6 @@ public class CollisionManager {
             if (!landed) {
                 enemy.setY(nextY);
             }
-
-            // Ground sensor: prevents 1-frame flicker when enemy straddles two tile edges
             if (!enemy.isOnGround() && enemy.getVelY() >= 0) {
                 Rectangle feetSensor = new Rectangle(
                     (int) enemy.getX() + 2,
@@ -367,7 +347,7 @@ public class CollisionManager {
                     }
                 }
             }
-            // Pit death check for enemies
+
             if (enemy.getY() > level.getHeight() + 100) {
                 enemy.setActive(false);
             }

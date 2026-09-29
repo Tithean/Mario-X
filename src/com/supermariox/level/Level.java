@@ -2,6 +2,8 @@ package com.supermariox.level;
 
 import com.supermariox.enermy.Enemy;
 import com.supermariox.items.Item;
+import com.supermariox.objects.Block;
+import com.supermariox.objects.Tile;
 import com.supermariox.player.Player;
 import com.supermariox.graphics.AssetManager;
 import com.supermariox.graphics.Camera;
